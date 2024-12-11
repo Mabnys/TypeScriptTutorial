@@ -52,7 +52,7 @@ export default function AppGroupPage() {
         }
 
         try {
-            const response = await fetch('/api/v1/get-all-apps', {
+            const response = await fetch('http://localhost:8080/api/v1/get-all-apps', {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
             if (response.ok) {
@@ -91,8 +91,8 @@ export default function AppGroupPage() {
 
         const method = selectedAppId ? 'PUT' : 'POST';
         const url = selectedAppId
-            ? `/api/v1/update-app?APPID=${selectedAppId}`
-            : '/api/v1/create-app';
+            ? `http://localhost:8080/api/v1/update-app?APPID=${selectedAppId}`
+            : 'http://localhost:8080/api/v1/create-app';
 
         try {
             const response = await fetch(url, {
@@ -122,7 +122,7 @@ export default function AppGroupPage() {
         if (!authToken) return;
 
         try {
-            const response = await fetch(`/api/v1/delete-app?APPID=${selectedAppId}`, {
+            const response = await fetch(`http://localhost:8080/api/v1/delete-app?APPID=${selectedAppId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${authToken}` },
             });
