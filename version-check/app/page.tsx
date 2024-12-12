@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-6 bg-white rounded-lg shadow-md">
-        <Image src="/its.svg" alt="NYS ITS Logo" width={200} height={100} className="mx-auto mb-6" />
+        <Image src="/its.png" alt="NYS ITS Logo" width={200} height={100} className="mx-auto mb-6" />
         
         {/* Login form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
