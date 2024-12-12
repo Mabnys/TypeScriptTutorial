@@ -1,151 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, SubmitHandler } from 'react-hook-form';
 import Image from 'next/image';
-
-// Define the structure of an App object
-interface App {
-    id: string;
-    appName: string;
-    bundleId: string;
-    minimumTargetVersion: string;
-    recommendedTargetVersion: string;
-    platformName: string;
-    lastUpdateDate: string;
-    thumbnail?: string;
-    appGroup?: { id: string };
-}
-
-// Define the structure of the form inputs
-type FormInputs = {
-    appName: string;
-    bundleId: string;
-    minTargetVersion: string;
-    recTargetVersion: string;
-    platformName: string;
-    appGroupId: string;
-};
+import { useAppGroup } from './useAppGroup';
 
 export default function AppGroupPage() {
-    const [apps, setApps] = useState<App[]>([]);
-    const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [modalTitle, setModalTitle] = useState('');
-    const router = useRouter();
-
-    // Initialize react-hook-form
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormInputs>();
-
-    // Fetch the authentication token from cookies
-    const getAuthToken = () => {
-        return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-    };
-
-    // Fetch all apps from the API
-    const fetchApps = async () => {
-        const authToken = getAuthToken();
-        if (!authToken) {
-            router.push('/');
-            return;
-        }
-
-        try {
-            const response = await fetch('http://localhost:8080/api/v1/get-all-apps', {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setApps(data);
-            } else {
-                console.error('Failed to fetch apps');
-            }
-        } catch (error) {
-            console.error('Error fetching apps:', error);
-        }
-    };
-
-    // Handle opening the modal for adding or updating an app
-    const handleOpenModal = (title: string, appData?: App) => {
-        setModalTitle(title);
-        setModalOpen(true);
-        if (appData) {
-            // Pre-fill form with existing app data
-            setValue('appName', appData.appName);
-            setValue('bundleId', appData.bundleId);
-            setValue('minTargetVersion', appData.minimumTargetVersion);
-            setValue('recTargetVersion', appData.recommendedTargetVersion);
-            setValue('platformName', appData.platformName);
-            setValue('appGroupId', appData.appGroup?.id || '');
-        } else {
-            // Reset form for adding new app
-            reset();
-        }
-    };
-
-    // Handle form submission
-    const onSubmit: SubmitHandler<FormInputs> = async (data) => {
-        const authToken = getAuthToken();
-        if (!authToken) return;
-
-        const method = selectedAppId ? 'PUT' : 'POST';
-        const url = selectedAppId
-            ? `http://localhost:8080/api/v1/update-app?APPID=${selectedAppId}`
-            : 'http://localhost:8080/api/v1/create-app';
-
-        try {
-            const response = await fetch(url, {
-                method,
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data),
-            });
-
-            if (response.ok) {
-                setModalOpen(false);
-                fetchApps();
-            } else {
-                throw new Error('Form submission failed');
-            }
-        } catch (error) {
-            console.error('Error submitting form:', error);
-        }
-    };
-
-    // Handle deleting an app
-    const handleDelete = async () => {
-        if (!selectedAppId) return;
-        const authToken = getAuthToken();
-        if (!authToken) return;
-
-        try {
-            const response = await fetch(`http://localhost:8080/api/v1/delete-app?APPID=${selectedAppId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${authToken}` },
-            });
-
-            if (response.ok) {
-                fetchApps();
-            } else {
-                throw new Error('Failed to delete app');
-            }
-        } catch (error) {
-            console.error('Error deleting app:', error);
-        }
-    };
-
-    // Fetch apps when the component mounts
-    useEffect(() => {
-        fetchApps();
-    });
+    // Use the custom hook to handle app group logic
+    const {
+        apps,
+        selectedAppId,
+        setSelectedAppId,
+        modalOpen,
+        setModalOpen,
+        modalTitle,
+        register,
+        handleSubmit,
+        errors,
+        handleOpenModal,
+        onSubmit,
+        handleDelete,
+        fetchApps
+    } = useAppGroup();
 
     return (
         <div className="content">
             <h2>App Table</h2>
             
+            {/* Action buttons */}
             <div className="action-buttons">
                 <button onClick={fetchApps} className="action-button">Refresh</button>
                 <button onClick={() => handleOpenModal('Add App')} className="action-button">Add App</button>
@@ -153,7 +33,8 @@ export default function AppGroupPage() {
                 <button onClick={handleDelete} className="action-button" disabled={!selectedAppId}>Delete Selected</button>
                 <button className="action-button">Upload Image</button>
             </div>
-            
+
+            {/* App table */}
             <table id="appTable" border={1} cellPadding={10} cellSpacing={0}>
                 <thead>
                     <tr>
@@ -170,6 +51,7 @@ export default function AppGroupPage() {
                     </tr>
                 </thead>
                 <tbody>
+                    {/* Map through apps and render each row */}
                     {apps.map(app => (
                         <tr key={app.id}>
                             <td>
@@ -195,13 +77,15 @@ export default function AppGroupPage() {
                 </tbody>
             </table>
 
+            {/* Modal for adding/updating apps */}
             {modalOpen && (
                 <div className="modal">
                     <div className="modal-content">
                         <span className="close" onClick={() => setModalOpen(false)}>&times;</span>
                         <h2>{modalTitle}</h2>
                         <form onSubmit={handleSubmit(onSubmit)}>
-                            <input {...register('appName', { required: 'App Name is required' })} placeholder="App Name" />
+                        {/* Form inputs */}
+                        <input {...register('appName', { required: 'App Name is required' })} placeholder="App Name" />
                             {errors.appName && <span>{errors.appName.message}</span>}
                             
                             <input {...register('bundleId', { required: 'Bundle ID is required' })} placeholder="Bundle ID" />
