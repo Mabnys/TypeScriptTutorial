@@ -77,29 +77,6 @@ export const useAppGroup = () => {
         });
     };
 
-    // // Fetch all apps from the API
-    // const fetchApps = async () => {
-    //     const authToken = getAuthToken();
-    //     if (!authToken) {
-    //         router.push('/');
-    //         return;
-    //     }
-
-    //     try {
-    //         const response = await fetch('http://localhost:8080/api/v1/get-all-apps', {
-    //             headers: { 'Authorization': `Bearer ${authToken}` }
-    //         });
-    //         if (response.ok) {
-    //             const data = await response.json();
-    //             setApps(data);
-    //         } else {
-    //             console.error('Failed to fetch apps');
-    //         }
-    //     } catch (error) {
-    //         console.error('Error fetching apps:', error);
-    //     }
-    // };
-
     // Handle opening the modal for adding or updating an app
     const handleOpenModal = (title: string, appData?: App) => {
         setModalTitle(title);
@@ -171,12 +148,8 @@ export const useAppGroup = () => {
         }
     };
 
-    // useEffect(() => {
-    //     fetchApps();
-    // });
-
-      // Fetch apps when the component mounts
-      useEffect(() => {
+    // Fetch apps when the component mounts
+    useEffect(() => {
         fetchApps().catch(error => console.error('Error in useEffect:', error));
     }, []);
 
