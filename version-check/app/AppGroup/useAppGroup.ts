@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 
@@ -42,7 +42,7 @@ export const useAppGroup = () => {
     };
 
     // Fetch all apps from the API using Promise-based approach
-    const fetchApps = () => {
+    const fetchApps = useCallback(() => {
         // Get the authentication token
         const authToken = getAuthToken();
         
@@ -75,7 +75,7 @@ export const useAppGroup = () => {
                 reject(error);
             });
         });
-    };
+    }, [router]);
 
     // Handle opening the modal for adding or updating an app
     const handleOpenModal = (title: string, appData?: App) => {
@@ -126,7 +126,7 @@ export const useAppGroup = () => {
         }
     };
 
-     // Handle deleting an app
+    // Handle deleting an app
     const handleDelete = async () => {
         if (!selectedAppId) return;
         const authToken = getAuthToken();
@@ -151,7 +151,7 @@ export const useAppGroup = () => {
     // Fetch apps when the component mounts
     useEffect(() => {
         fetchApps().catch(error => console.error('Error in useEffect:', error));
-    }, []);
+    }, [fetchApps]);
 
     // Return necessary functions and state for the app group page
     return {
