@@ -1,5 +1,3 @@
-// useGroupApps.ts
-
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation'; // Import useRouter for navigation
@@ -8,34 +6,31 @@ import { useRouter } from 'next/navigation'; // Import useRouter for navigation
 export interface AppGroup {
   id: string;
   groupName: string;
-  appDescription: string;
-  thumbnail?: string;
+  appDescription: string; // Description of the app group
+  thumbnail?: string; // Optional thumbnail field
 }
 
 // Define the structure of an App (used for form data)
 export interface AppFormData {
-  appName: string;
-  appDescription: string; // Added description field
-  bundleId: string;
-  minTargetVersion: string;
-  recTargetVersion: string;
-  platformName: 'iOS' | 'Android' | '';
+  appName: string; // Name of the app group
+  appDescription: string; // Description of the app group
 }
 
 export const useGroupApps = () => {
   // State management
-  const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('Add App');
+  const [appGroups, setAppGroups] = useState<AppGroup[]>([]); // State to hold app groups
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null); // State to hold selected group ID
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
+  const [modalTitle, setModalTitle] = useState('Add App Group'); // State for modal title
 
   // Initialize react-hook-form
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AppFormData>();
-  
-   // Fetch the authentication token from cookies
-   const getAuthToken = () => {
+
+  // Fetch the authentication token from cookies
+  const getAuthToken = () => {
     return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-    };
+  };
+
   const router = useRouter(); // Initialize the router for navigation
 
   // Fetch app groups on component mount
@@ -45,31 +40,26 @@ export const useGroupApps = () => {
 
   // Function to fetch app groups from the API using a Promise-based approach
   const fetchAppGroups = useCallback(() => {
-    // Get the authentication token (assumed to be a function you have)
-    const authToken = getAuthToken();
+    const authToken = getAuthToken(); // Get the authentication token
 
-    // If no auth token is found, redirect to login page
     if (!authToken) {
-      router.push('/'); // Redirect to home or login page
+      router.push('/'); // Redirect to home or login page if no token is found
       return Promise.reject('No auth token found');
     }
 
-    // Return a new Promise to handle the API call
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch('http://localhost:8080/api/v1/get-all-appgroups', {
         headers: { 'Authorization': `Bearer ${authToken}` }
       })
       .then(response => {
-        // Check if the response is ok (status in the range 200-299)
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
         return response.json(); // Parse JSON data from response
       })
       .then(data => {
-        // Update the app groups state with the fetched data
-        setAppGroups(data);
-        resolve(data); // Resolve the promise after updating state
+        setAppGroups(data); // Update state with fetched data
+        resolve(); // Resolve the promise after updating state
       })
       .catch(error => {
         console.error('Error fetching apps:', error);
@@ -80,7 +70,7 @@ export const useGroupApps = () => {
 
   // Function to handle group selection
   const handleSelectGroup = (id: string) => {
-    setSelectedGroupId(id);
+    setSelectedGroupId(id); // Set the selected group ID
   };
 
   // Function to refresh app groups
@@ -88,28 +78,90 @@ export const useGroupApps = () => {
 
   // Function to open modal for adding an app group
   const handleAdd = () => {
-    setModalTitle('Add App');
+    setModalTitle('Add App Group'); // Set modal title for adding a new app group
     reset(); // Reset form when opening for adding
-    setIsModalOpen(true);
+    setSelectedGroupId(null); // Clear selected group ID for new creation
+    setIsModalOpen(true); // Open modal
   };
 
   // Function to open modal for updating an app group
   const handleUpdate = () => {
-    setModalTitle('Update App');
-    // TODO: Fetch current app data and set it using reset()
-    setIsModalOpen(true);
+    if (!selectedGroupId) return alert('No group selected.'); // Ensure a group is selected
+
+    const selectedGroup = appGroups.find(group => group.id === selectedGroupId);
+    if (selectedGroup) {
+      setModalTitle('Update App Group'); // Set modal title for updating an existing app group
+      reset({
+        appName: selectedGroup.groupName,
+        appDescription: selectedGroup.appDescription,
+      }); // Pre-fill form with selected group's data
+      setIsModalOpen(true); // Open modal for updating
+    }
   };
 
-  // Function to delete an app group
+  /**
+   * Function to delete an app group.
+   * - Prompts the user for confirmation before deleting.
+   * - Sends a DELETE request to the backend API.
+   * - Refreshes the list of app groups upon successful deletion.
+   */
   const handleDelete = () => {
-    // TODO: Implement delete functionality
+    if (!selectedGroupId) return alert('No group selected.'); // Ensure a group is selected
+
+    if (confirm('Are you sure you want to delete this app group?')) { // Confirm deletion with user
+      const authToken = getAuthToken();
+      if (!authToken) return alert('Authentication required.');
+
+      fetch(`http://localhost:8080/api/v1/delete-appgroup?APPID=${selectedGroupId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${authToken}` },
+      })
+        .then(response => {
+          if (response.ok) {
+            alert('App Group deleted successfully!'); // Notify user of success
+            fetchAppGroups(); // Refresh list after deletion
+          } else {
+            throw new Error('Failed to delete App Group'); // Handle failure case
+          }
+        })
+        .catch(error => console.error('Error deleting App Group:', error)); // Log errors if any occur during deletion
+    }
   };
 
-  // Form submission handler
+  /**
+   * Form submission handler (for both add and update).
+   * - Sends POST or PUT requests based on whether a new group is being created or an existing one is being updated.
+   */
   const onSubmit: SubmitHandler<AppFormData> = (data) => {
-    console.log('Form submitted:', data);
-    // TODO: Implement API call to add/update app
-    setIsModalOpen(false);
+    const authToken = getAuthToken();
+    if (!authToken) return alert('Authentication required.');
+
+    const method = selectedGroupId ? 'PUT' : 'POST'; // Determine HTTP method based on action (add or update)
+    const url = selectedGroupId 
+      ? `http://localhost:8080/api/v1/update-appgroup?APPID=${selectedGroupId}`
+      : 'http://localhost:8080/api/v1/create-appgroup';
+
+    fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        groupName: data.appName,
+        appDescription: data.appDescription,
+      }),
+    })
+      .then(response => {
+        if (response.ok) {
+          alert(`${selectedGroupId ? 'Updated' : 'Created'} App Group successfully!`);
+          setIsModalOpen(false); 
+          fetchAppGroups(); // Refresh list after submission
+        } else {
+          throw new Error('Form submission failed');
+        }
+      })
+      .catch(error => console.error('Error submitting form:', error));
   };
 
   return {
@@ -126,6 +178,6 @@ export const useGroupApps = () => {
     handleUpdate,
     handleDelete,
     onSubmit,
-    setIsModalOpen
+    setIsModalOpen,
   };
 };
