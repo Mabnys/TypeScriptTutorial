@@ -12,6 +12,7 @@ export interface AppGroup {
 // Define the structure of an App (used for form data)
 export interface AppFormData {
   appName: string;
+  appDescription: string; // Added description field
   bundleId: string;
   minTargetVersion: string;
   recTargetVersion: string;
@@ -51,14 +52,14 @@ export const useGroupApps = () => {
   // Function to refresh app groups
   const handleRefresh = () => fetchAppGroups();
 
-  // Function to open modal for adding an app
+  // Function to open modal for adding an app group
   const handleAdd = () => {
     setModalTitle('Add App');
     reset(); // Reset form when opening for adding
     setIsModalOpen(true);
   };
 
-  // Function to open modal for updating an app
+  // Function to open modal for updating an app group
   const handleUpdate = () => {
     setModalTitle('Update App');
     // TODO: Fetch current app data and set it using reset()
