@@ -35,7 +35,7 @@ const GroupApps: React.FC = () => {
           <button onClick={handleRefresh} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Refresh App Group List</button>
           <button onClick={handleAdd} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Add App Group</button>
           <button onClick={handleUpdate} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Update App Group</button>
-          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Delete App Group</button>
+          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Delete App Group</button>
         </div>
         
         <table className="w-full border-collapse border border-gray-300">
@@ -62,7 +62,7 @@ const GroupApps: React.FC = () => {
                 </td>
                 <td className="border border-gray-300 p-2">{group.id}</td>
                 <td className="border border-gray-300 p-2">{group.groupName}</td>
-                <td className="border border-gray-300 p-2">{group.description}</td>
+                <td className="border border-gray-300 p-2">{group.appDescription}</td>
                 <td className="border border-gray-300 p-2">
                   {group.thumbnail && (
                     <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
