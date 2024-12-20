@@ -10,7 +10,7 @@ const Footer: React.FC = () => {
     border-t border-gray-700 // Top border (1px solid, slightly lighter than background)
     mt-8 // Top margin (30px equivalent)
   ">
-      <p>© 2024 2024 - New York State Department of Technology</p>
+      <p>© 2024 - New York State Department of Technology</p>
     </footer>
   );
 };
