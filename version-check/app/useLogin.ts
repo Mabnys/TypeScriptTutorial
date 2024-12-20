@@ -32,7 +32,6 @@ export const useLogin = () => {
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log('Login successful:', responseData);
 
         // Set authentication cookies
         document.cookie = `authToken=${responseData.access_token}; path=/; max-age=3600; SameSite=Lax;`;
