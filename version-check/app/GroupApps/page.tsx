@@ -28,14 +28,14 @@ const GroupApps: React.FC = () => {
   return (
     <>
       <Header />
-      <div className="container mx-auto px-4 py-8">
+      <div className="pt-24 text-center mx-auto max-w-4xl"> {/* Tailwind classes for padding, text alignment, and max width */}
         <h2 className="text-2xl font-bold mb-4">App Group Table</h2>
         
-        <div className="flex space-x-2 mb-4">
-          <button onClick={handleRefresh} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">Refresh App Group List</button>
+        <div className="flex space-x-2 mb-4"> {/* Flex container for action buttons */}
+          <button onClick={handleRefresh} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Refresh App Group List</button>
           <button onClick={handleAdd} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Add App Group</button>
-          <button onClick={handleUpdate} disabled={!selectedGroupId} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Update App Group</button>
-          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Delete App Group</button>
+          <button onClick={handleUpdate} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Update App Group</button>
+          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Delete App Group</button>
         </div>
         
         <table className="w-full border-collapse border border-gray-300">
