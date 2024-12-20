@@ -22,7 +22,8 @@ const AppGroups: React.FC = () => {
     handleUpdate,
     handleDelete,
     onSubmit,
-    setIsModalOpen
+    setIsModalOpen,
+    handleUploadImage, // Importing the image upload function if needed in future updates.
   } = useGroupApps();
 
   return (
@@ -67,6 +68,10 @@ const AppGroups: React.FC = () => {
                   {group.thumbnail && (
                     <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
                   )}
+                  {/* Button to open image upload modal */}
+                  <button onClick={() => handleUploadImage(group.id)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors cursor-pointer">
+                    Upload Thumbnail
+                  </button>
                 </td>
               </tr>
             ))}

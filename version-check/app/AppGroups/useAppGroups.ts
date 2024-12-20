@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'; // Import useRouter for navigation
 // Define the structure of an AppGroup
 export interface AppGroup {
   id: string;
-  groupName: string;
+  groupName: string; // Name of the app group
   appDescription: string; // Description of the app group
   thumbnail?: string; // Optional thumbnail field
 }
@@ -42,31 +42,28 @@ export const useGroupApps = () => {
       return Promise.reject('No auth token found');
     }
 
-    return new Promise((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       fetch('http://localhost:8080/api/v1/get-all-appgroups', {
-        headers: { 'Authorization': `Bearer ${authToken}` }
+        headers: { 'Authorization': `Bearer ${authToken}` },
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        return response.json(); // Parse JSON data from response
-      })
-      .then(data => {
-        setAppGroups(data); // Update state with fetched data
-        resolve(data); // Resolve the promise after updating state
-      })
-      .catch(error => {
-        console.error('Error fetching apps:', error);
-        reject(error); // Reject the promise on error
-      });
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json(); // Parse JSON data from response
+        })
+        .then(data => {
+          setAppGroups(data); // Update state with fetched data
+          resolve(); // Resolve the promise after updating state
+        })
+        .catch(reject); // Reject the promise on error
     });
   }, [router]); // Include router in dependency array
 
-  // Fetch app groups on component mount
-  useEffect(() => {
+   // Fetch app groups on component mount
+   useEffect(() => {
     fetchAppGroups().catch(error => console.error('Error in useEffect:', error));
-  },[fetchAppGroups]);
+  }, [fetchAppGroups]);
 
   // Function to handle group selection
   const handleSelectGroup = (id: string) => {
@@ -79,10 +76,7 @@ export const useGroupApps = () => {
   // Function to open modal for adding an app group
   const handleAdd = () => {
     setModalTitle('Add App Group'); // Set modal title for adding a new app group
-    reset({
-        appName: "",
-        appDescription: "",
-      }); // Reset form when opening for adding
+    reset({ appName: '', appDescription: '' }); // Reset form when opening for adding
     setSelectedGroupId(null); // Clear selected group ID for new creation
     setIsModalOpen(true); // Open modal
   };
@@ -167,6 +161,80 @@ export const useGroupApps = () => {
       .catch(error => console.error('Error submitting form:', error));
   };
 
+
+  /**
+ * Function to handle image upload for an app group.
+ * - Creates a modal for selecting an image.
+ * - Sends a POST request to upload the selected image.
+ */
+const handleUploadImage = (appId: string) => {
+  const authToken = getAuthToken(); // Get the authentication token
+  if (!authToken) return alert('Authentication required.'); // Ensure authentication
+
+  // Create the upload modal element
+  const uploadModal = document.createElement('div');
+  uploadModal.className = 'modal';
+  uploadModal.innerHTML = `
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Upload/Change Image for App Group</h2>
+      <form id="uploadImageForm">
+        <label for="uploadImageInput">Select an image:</label>
+        <input type="file" id="uploadImageInput" accept="image/*" required />
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+  `;
+
+  // Append the modal to the document body
+  document.body.appendChild(uploadModal);
+
+  // Close modal functionality
+  const closeUploadModal = uploadModal.querySelector('.close') as HTMLElement;
+  closeUploadModal.onclick = () => {
+    document.body.removeChild(uploadModal); // Remove the modal from DOM
+  };
+
+  // Handle form submission for image upload
+  const uploadImageForm = uploadModal.querySelector('#uploadImageForm') as HTMLFormElement;
+  const uploadImageInput = uploadModal.querySelector('#uploadImageInput') as HTMLInputElement;
+
+  uploadImageForm.addEventListener('submit', (event) => {
+    event.preventDefault(); // Prevent default form submission
+
+    if (!uploadImageInput.files || !uploadImageInput.files[0]) {
+      alert('Please select an image.'); // Alert if no file is selected
+      return;
+    }
+
+    const formData = new FormData(); // Create FormData object to hold file data
+    formData.append('vcImage', uploadImageInput.files[0]); // Append selected file to FormData
+
+    // Send POST request to upload the image
+    fetch(`http://localhost:8080/api/v1/app/${appId}/upload-image`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${authToken}` },
+      body: formData,
+    })
+      .then(response => {
+        if (response.ok) {
+          alert('Image uploaded/updated successfully!'); // Notify user of success
+          document.body.removeChild(uploadModal); // Close modal after successful upload
+          fetchAppGroups(); // Refresh the list of app groups
+        } else {
+          throw new Error('Failed to upload image.'); // Handle failure case
+        }
+      })
+      .catch(error => {
+        console.error('Error uploading image:', error); // Log any errors that occur during upload
+        alert('An error occurred while uploading the image.'); // Alert user of error
+      });
+  });
+
+  // Display the modal
+  uploadModal.style.display = 'block';
+};
+
   return {
     appGroups,
     selectedGroupId,
@@ -182,5 +250,6 @@ export const useGroupApps = () => {
     handleDelete,
     onSubmit,
     setIsModalOpen,
+    handleUploadImage,
   };
 };
