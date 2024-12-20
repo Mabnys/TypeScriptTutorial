@@ -79,7 +79,10 @@ export const useGroupApps = () => {
   // Function to open modal for adding an app group
   const handleAdd = () => {
     setModalTitle('Add App Group'); // Set modal title for adding a new app group
-    reset(); // Reset form when opening for adding
+    reset({
+        appName: "",
+        appDescription: "",
+      }); // Reset form when opening for adding
     setSelectedGroupId(null); // Clear selected group ID for new creation
     setIsModalOpen(true); // Open modal
   };
