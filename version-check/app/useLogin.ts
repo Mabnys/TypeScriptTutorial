@@ -38,7 +38,7 @@ export const useLogin = () => {
         document.cookie = `authToken=${responseData.access_token}; path=/; max-age=3600; SameSite=Lax;`;
         document.cookie = `userEmail=${data.username}; path=/; max-age=3600; SameSite=Lax;`;
         // Redirect to app group page on successful login
-        router.push('/AppGroup');
+        router.push('/GroupApps');
       } else {
         setLoginError('Invalid username or password.');
       }
