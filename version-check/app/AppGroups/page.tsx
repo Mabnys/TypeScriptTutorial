@@ -2,11 +2,11 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useGroupApps } from './useGroupApps'; // Importing the custom hook
+import { useGroupApps } from './useAppGroups'; // Importing the custom hook
 import Header from '../Header/header';
 import Footer from '../Footer/footer';
 
-const GroupApps: React.FC = () => {
+const AppGroups: React.FC = () => {
   // Use the custom hook to manage app groups and modal state
   const {
     appGroups,
@@ -117,4 +117,4 @@ const GroupApps: React.FC = () => {
   );
 };
 
-export default GroupApps;
+export default AppGroups;
