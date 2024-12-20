@@ -1,117 +1,69 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useGroupApps } from './useGroupApps'; // Importing the custom hook
 import Header from '../Header/header';
 import Footer from '../Footer/footer';
 
-// Define the structure of an AppGroup
-interface AppGroup {
-  id: string;
-  groupName: string;
-  description: string;
-  thumbnail?: string;
-}
-
-// Define the structure of an App (used for form data)
-interface AppFormData {
-  appName: string;
-  bundleId: string;
-  minTargetVersion: string;
-  recTargetVersion: string;
-  platformName: 'iOS' | 'Android' | '';
-}
-
 const GroupApps: React.FC = () => {
-  const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('Add App');
-
-  // Initialize react-hook-form
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AppFormData>();
-
-  useEffect(() => {
-    fetchAppGroups();
-  }, []);
-
-  const fetchAppGroups = async () => {
-    // TODO: Implement API call
-    const dummyData: AppGroup[] = [
-      { id: '1', groupName: 'Group 1', description: 'Description 1' },
-      { id: '2', groupName: 'Group 2', description: 'Description 2' },
-    ];
-    setAppGroups(dummyData);
-  };
-
-  const handleSelectGroup = (id: string) => {
-    setSelectedGroupId(id);
-  };
-
-  const handleRefresh = () => fetchAppGroups();
-
-  const handleAdd = () => {
-    setModalTitle('Add App');
-    reset(); // Reset form when opening for adding
-    setIsModalOpen(true);
-  };
-
-  const handleUpdate = () => {
-    setModalTitle('Update App');
-    // TODO: Fetch current app data and set it using reset()
-    setIsModalOpen(true);
-  };
-
-  const handleDelete = () => {
-    // TODO: Implement delete functionality
-  };
-
-  // Form submission handler
-  const onSubmit: SubmitHandler<AppFormData> = (data) => {
-    console.log('Form submitted:', data);
-    // TODO: Implement API call to add/update app
-    setIsModalOpen(false);
-  };
+  // Use the custom hook to manage app groups and modal state
+  const {
+    appGroups,
+    selectedGroupId,
+    isModalOpen,
+    modalTitle,
+    register,
+    handleSubmit,
+    errors,
+    handleSelectGroup,
+    handleRefresh,
+    handleAdd,
+    handleUpdate,
+    handleDelete,
+    onSubmit,
+    setIsModalOpen
+  } = useGroupApps();
 
   return (
     <>
       <Header />
-      <div className="content">
-        <h2>App Group Table</h2>
+      <div className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-4">App Group Table</h2>
         
-        <div className="action-buttons">
-          <button id="refreshButton" className="action-button" onClick={handleRefresh}>Refresh App Group List</button>
-          <button id="addButton" className="action-button" onClick={handleAdd}>Add App Group</button>
-          <button id="updateButton" className="action-button" onClick={handleUpdate} disabled={!selectedGroupId}>Update App Group</button>
-          <button id="deleteButton" className="action-button" onClick={handleDelete} disabled={!selectedGroupId}>Delete App Group</button>
+        <div className="flex space-x-2 mb-4">
+          <button onClick={handleRefresh} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">Refresh App Group List</button>
+          <button onClick={handleAdd} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Add App Group</button>
+          <button onClick={handleUpdate} disabled={!selectedGroupId} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Update App Group</button>
+          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Delete App Group</button>
         </div>
         
-        <table id="appgroupTable" border={1} cellPadding={10} cellSpacing={0}>
+        <table className="w-full border-collapse border border-gray-300">
           <thead>
-            <tr>
-              <th>Select</th>
-              <th>ID</th>
-              <th>Group Name</th>
-              <th>Description</th>
-              <th>Thumbnail</th>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-300 p-2">Select</th>
+              <th className="border border-gray-300 p-2">ID</th>
+              <th className="border border-gray-300 p-2">Group Name</th>
+              <th className="border border-gray-300 p-2">Description</th>
+              <th className="border border-gray-300 p-2">Thumbnail</th>
             </tr>
           </thead>
           <tbody>
             {appGroups.map((group) => (
-              <tr key={group.id}>
-                <td>
+              <tr key={group.id} className="hover:bg-gray-50">
+                <td className="border border-gray-300 p-2">
                   <input
                     type="radio"
                     name="groupSelect"
                     checked={selectedGroupId === group.id}
                     onChange={() => handleSelectGroup(group.id)}
+                    className="cursor-pointer"
                   />
                 </td>
-                <td>{group.id}</td>
-                <td>{group.groupName}</td>
-                <td>{group.description}</td>
-                <td>
+                <td className="border border-gray-300 p-2">{group.id}</td>
+                <td className="border border-gray-300 p-2">{group.groupName}</td>
+                <td className="border border-gray-300 p-2">{group.description}</td>
+                <td className="border border-gray-300 p-2">
                   {group.thumbnail && (
                     <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
                   )}
@@ -123,31 +75,38 @@ const GroupApps: React.FC = () => {
 
         {/* Modal Structure */}
         {isModalOpen && (
-          <div id="modalForm" className="modal">
-            <div className="modal-content">
-              <span className="close" onClick={() => setIsModalOpen(false)}>&times;</span>
-              <h2 id="modalTitle">{modalTitle}</h2>
-              <form id="appForm" onSubmit={handleSubmit(onSubmit)}>
-                <input {...register("appName", { required: "App Name is required" })} placeholder="App Name" />
-                {errors.appName && <span>{errors.appName.message}</span>}
+          <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div className="modal-content bg-white p-6 rounded-lg w-full max-w-md">
+              {/* Close button */}
+              <span 
+                className="close text-gray-500 hover:text-gray-700 cursor-pointer float-right" 
+                onClick={() => setIsModalOpen(false)}>&times;
+              </span>
+              {/* Modal title */}
+              <h2 id="modalTitle" className="text-xl font-bold mb-4">{modalTitle}</h2>
 
-                <input {...register("bundleId", { required: "Bundle ID is required" })} placeholder="Bundle ID" />
-                {errors.bundleId && <span>{errors.bundleId.message}</span>}
+              {/* Form for adding/updating app groups */}
+              <form id="groupForm" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {/* Group Name Input */}
+                <input 
+                  {...register("appName", { required: "App Name is required" })} 
+                  placeholder="Group Name" 
+                  className={`w-full p-2 border rounded ${errors.appName ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors.appName && <span className="text-red-500 text-sm">{errors.appName.message}</span>}
 
-                <input {...register("minTargetVersion", { required: "Minimum Target Version is required" })} placeholder="Minimum Target Version" />
-                {errors.minTargetVersion && <span>{errors.minTargetVersion.message}</span>}
+                {/* Description Textarea */}
+                <textarea 
+                  {...register("appDescription", { required: "Description is required" })} 
+                  placeholder="Description" 
+                  rows={4}
+                  required 
+                  className={`w-full p-2 border rounded ${errors.appDescription ? 'border-red-500' : 'border-gray-300'}`}
+                />
+                {errors.appDescription && <span className="text-red-500 text-sm">{errors.appDescription.message}</span>}
 
-                <input {...register("recTargetVersion", { required: "Recommended Target Version is required" })} placeholder="Recommended Target Version" />
-                {errors.recTargetVersion && <span>{errors.recTargetVersion.message}</span>}
-
-                <select {...register("platformName", { required: "Platform is required" })}>
-                  <option value="">Select Platform</option>
-                  <option value="iOS">iOS</option>
-                  <option value="Android">Android</option>
-                </select>
-                {errors.platformName && <span>{errors.platformName.message}</span>}
-
-                <button type="submit">Submit</button>
+                {/* Submit Button */}
+                <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors">Submit</button>
               </form>
             </div>
           </div>
