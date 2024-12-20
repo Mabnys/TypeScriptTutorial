@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import Header from '../Header/header'; // Import Header component
-import Footer from '../Footer/footer'; // Import Footer component
+import { useForm, SubmitHandler } from 'react-hook-form';
+import Header from '../Header/header';
+import Footer from '../Footer/footer';
 
 // Define the structure of an AppGroup
 interface AppGroup {
@@ -13,21 +14,30 @@ interface AppGroup {
   thumbnail?: string;
 }
 
-const GroupApps: React.FC = () => {
-  // State to store the list of app groups
-  const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
-  // State to track the selected app group
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+// Define the structure of an App (used for form data)
+interface AppFormData {
+  appName: string;
+  bundleId: string;
+  minTargetVersion: string;
+  recTargetVersion: string;
+  platformName: 'iOS' | 'Android' | '';
+}
 
-  // Effect to fetch app groups on component mount
+const GroupApps: React.FC = () => {
+  const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('Add App');
+
+  // Initialize react-hook-form
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AppFormData>();
+
   useEffect(() => {
     fetchAppGroups();
   }, []);
 
-  // Function to fetch app groups from the API
   const fetchAppGroups = async () => {
-    // TODO: Implement API call to fetch app groups
-    // For now, we'll use dummy data
+    // TODO: Implement API call
     const dummyData: AppGroup[] = [
       { id: '1', groupName: 'Group 1', description: 'Description 1' },
       { id: '2', groupName: 'Group 2', description: 'Description 2' },
@@ -35,24 +45,41 @@ const GroupApps: React.FC = () => {
     setAppGroups(dummyData);
   };
 
-  // Function to handle app group selection
   const handleSelectGroup = (id: string) => {
     setSelectedGroupId(id);
   };
 
-  // Functions to handle button actions (to be implemented)
   const handleRefresh = () => fetchAppGroups();
-  const handleAdd = () => {/* TODO: Implement add functionality */};
-  const handleUpdate = () => {/* TODO: Implement update functionality */};
-  const handleDelete = () => {/* TODO: Implement delete functionality */};
+
+  const handleAdd = () => {
+    setModalTitle('Add App');
+    reset(); // Reset form when opening for adding
+    setIsModalOpen(true);
+  };
+
+  const handleUpdate = () => {
+    setModalTitle('Update App');
+    // TODO: Fetch current app data and set it using reset()
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = () => {
+    // TODO: Implement delete functionality
+  };
+
+  // Form submission handler
+  const onSubmit: SubmitHandler<AppFormData> = (data) => {
+    console.log('Form submitted:', data);
+    // TODO: Implement API call to add/update app
+    setIsModalOpen(false);
+  };
 
   return (
     <>
-      <Header /> {/* Add Header component */}
+      <Header />
       <div className="content">
         <h2>App Group Table</h2>
         
-        {/* Action buttons */}
         <div className="action-buttons">
           <button id="refreshButton" className="action-button" onClick={handleRefresh}>Refresh App Group List</button>
           <button id="addButton" className="action-button" onClick={handleAdd}>Add App Group</button>
@@ -60,7 +87,6 @@ const GroupApps: React.FC = () => {
           <button id="deleteButton" className="action-button" onClick={handleDelete} disabled={!selectedGroupId}>Delete App Group</button>
         </div>
         
-        {/* App Group Table */}
         <table id="appgroupTable" border={1} cellPadding={10} cellSpacing={0}>
           <thead>
             <tr>
@@ -94,8 +120,40 @@ const GroupApps: React.FC = () => {
             ))}
           </tbody>
         </table>
+
+        {/* Modal Structure */}
+        {isModalOpen && (
+          <div id="modalForm" className="modal">
+            <div className="modal-content">
+              <span className="close" onClick={() => setIsModalOpen(false)}>&times;</span>
+              <h2 id="modalTitle">{modalTitle}</h2>
+              <form id="appForm" onSubmit={handleSubmit(onSubmit)}>
+                <input {...register("appName", { required: "App Name is required" })} placeholder="App Name" />
+                {errors.appName && <span>{errors.appName.message}</span>}
+
+                <input {...register("bundleId", { required: "Bundle ID is required" })} placeholder="Bundle ID" />
+                {errors.bundleId && <span>{errors.bundleId.message}</span>}
+
+                <input {...register("minTargetVersion", { required: "Minimum Target Version is required" })} placeholder="Minimum Target Version" />
+                {errors.minTargetVersion && <span>{errors.minTargetVersion.message}</span>}
+
+                <input {...register("recTargetVersion", { required: "Recommended Target Version is required" })} placeholder="Recommended Target Version" />
+                {errors.recTargetVersion && <span>{errors.recTargetVersion.message}</span>}
+
+                <select {...register("platformName", { required: "Platform is required" })}>
+                  <option value="">Select Platform</option>
+                  <option value="iOS">iOS</option>
+                  <option value="Android">Android</option>
+                </select>
+                {errors.platformName && <span>{errors.platformName.message}</span>}
+
+                <button type="submit">Submit</button>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
-      <Footer /> {/* Add Footer component */}
+      <Footer />
     </>
   );
 };
