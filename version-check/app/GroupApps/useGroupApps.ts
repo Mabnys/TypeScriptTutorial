@@ -33,11 +33,6 @@ export const useGroupApps = () => {
 
   const router = useRouter(); // Initialize the router for navigation
 
-  // Fetch app groups on component mount
-  useEffect(() => {
-    fetchAppGroups();
-  });
-
   // Function to fetch app groups from the API using a Promise-based approach
   const fetchAppGroups = useCallback(() => {
     const authToken = getAuthToken(); // Get the authentication token
@@ -47,7 +42,7 @@ export const useGroupApps = () => {
       return Promise.reject('No auth token found');
     }
 
-    return new Promise<void>((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       fetch('http://localhost:8080/api/v1/get-all-appgroups', {
         headers: { 'Authorization': `Bearer ${authToken}` }
       })
@@ -59,7 +54,7 @@ export const useGroupApps = () => {
       })
       .then(data => {
         setAppGroups(data); // Update state with fetched data
-        resolve(); // Resolve the promise after updating state
+        resolve(data); // Resolve the promise after updating state
       })
       .catch(error => {
         console.error('Error fetching apps:', error);
@@ -67,6 +62,11 @@ export const useGroupApps = () => {
       });
     });
   }, [router]); // Include router in dependency array
+
+  // Fetch app groups on component mount
+  useEffect(() => {
+    fetchAppGroups().catch(error => console.error('Error in useEffect:', error));
+  },[fetchAppGroups]);
 
   // Function to handle group selection
   const handleSelectGroup = (id: string) => {
