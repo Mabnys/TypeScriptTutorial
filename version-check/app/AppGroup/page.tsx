@@ -29,15 +29,14 @@ export default function AppGroupPage() {
             <Header />
             <main className="flex-grow">
                 <div className="content container mx-auto px-4 py-8">
-                    <h2 className="text-2xl font-bold mb-4">App Table</h2>
+                    <h2 className="text-2xl font-bold mb-4">Apps in Selected Group </h2>
                     
                     {/* Action buttons */}
                     <div className="action-buttons">
-                        <button onClick={fetchApps} className="action-button">Refresh</button>
+                        <button onClick={fetchApps} className="action-button">Refresh App List</button>
                         <button onClick={() => handleOpenModal('Add App')} className="action-button">Add App</button>
-                        <button onClick={() => handleOpenModal('Update App', apps.find(app => app.id === selectedAppId))} className="action-button" disabled={!selectedAppId}>Update Selected</button>
-                        <button onClick={handleDelete} className="action-button" disabled={!selectedAppId}>Delete Selected</button>
-                        <button className="action-button">Upload Image</button>
+                        <button onClick={() => handleOpenModal('Update App', apps.find(app => app.id === selectedAppId))} className="action-button" disabled={!selectedAppId}>Update App</button>
+                        <button onClick={handleDelete} className="action-button" disabled={!selectedAppId}>Delete App</button>
                     </div>
 
                     {/* App table */}
