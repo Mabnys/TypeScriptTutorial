@@ -1,11 +1,9 @@
-// Header.tsx
-
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 const Header: React.FC = () => {
-  const [welcomeMessage, setWelcomeMessage] = useState<string>('');
+  const [welcomeMessage, setWelcomeMessage] = useState<string>('Welcome');
   const router = useRouter();
 
   useEffect(() => {
@@ -44,21 +42,33 @@ const Header: React.FC = () => {
     e.preventDefault();
     clearUserSession();
     console.log('User logged out. Redirecting to login page.');
-    router.push('/login');
+    router.push('http://localhost:3000');
   };
 
   return (
-    <header className="bg-blue-600 text-white p-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-2xl font-bold">App Management System</h1>
-        <nav>
-          <ul className="flex space-x-4 items-center">
-            <li><Link href="/appGroupPage" className="hover:underline">App Groups</Link></li>
-            <li><Link href="/profile" className="hover:underline">Profile</Link></li>
-            <li><a href="/logout" onClick={handleLogout} className="hover:underline">Logout</a></li>
-            <li><span id="welcome-message">{welcomeMessage}</span></li>
-          </ul>
-        </nav>
+    // Header styling
+    <header className="bg-gray-800 text-white px-7.5 py-3.75 flex items-center justify-between fixed top-0 left-0 right-0 w-full h-15 z-10 shadow-lg">
+      {/* Left side of the header */}
+      <div className="header-left flex gap-5">
+        <Link href="/" id="appgroup-link" className="text-white no-underline text-base font-medium transition-colors duration-300 hover:text-blue-500">
+          Version Check
+        </Link>
+      </div>
+
+      {/* Right side of the header */}
+      <div className="header-right flex items-center gap-2.5 ml-auto whitespace-nowrap pr-7.5">
+        {/* Welcome message */}
+        <span id="welcome-message" className="text-base">{welcomeMessage}</span>
+
+        {/* Logout button */}
+        <a 
+          id="logout-button" 
+          href="#" 
+          onClick={handleLogout}
+          className="text-blue-400 font-bold no-underline px-3 py-1.5 rounded-md bg-white border-2 border-red-400 transition-colors duration-300 cursor-pointer hover:bg-red-400 hover:text-white"
+        >
+          Log out
+        </a>
       </div>
     </header>
   );

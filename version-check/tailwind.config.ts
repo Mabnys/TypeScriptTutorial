@@ -12,6 +12,10 @@ export default {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      spacing: {
+        '7.5': '30px',
+        '15': '60px',
+      },
     },
   },
   plugins: [],
