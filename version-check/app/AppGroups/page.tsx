@@ -3,8 +3,9 @@
 import React from 'react';
 import Image from 'next/image';
 import { useGroupApps } from './useAppGroups'; // Importing the custom hook
-import Header from '../Header/header';
-import Footer from '../Footer/footer';
+import Header from '../Components/header';
+import Footer from '../Components/footer';
+import Button from '../Components/button';
 
 const AppGroups: React.FC = () => {
   // Use the custom hook to manage app groups and modal state
@@ -33,11 +34,27 @@ const AppGroups: React.FC = () => {
         <h2 className="text-2xl font-bold mb-4">App Group Table</h2>
         
         <div className="flex space-x-2 mb-4"> {/* Flex container for action buttons */}
-          <button onClick={handleRefresh} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Refresh App Group List</button>
-          <button onClick={handleAdd} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Add App Group</button>
-          <button onClick={handleUpdate} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Update App Group</button>
-          <button onClick={handleDelete} disabled={!selectedGroupId} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors">Delete App Group</button>
-        </div>
+    <Button onClick={handleRefresh}>
+      Refresh App Group List
+    </Button>
+    <Button onClick={handleAdd}> 
+      Add App Group
+    </Button>
+    <Button 
+      onClick={handleUpdate}
+      disabled={!selectedGroupId}
+      variant='secondary'
+    >
+      Update App Group
+    </Button>
+    <Button 
+      onClick={handleDelete}
+      disabled={!selectedGroupId}
+      variant='danger'
+    >
+      Delete App Group
+    </Button>
+  </div>
         
         <table className="w-full border-collapse border border-gray-300">
           <thead>
@@ -69,9 +86,12 @@ const AppGroups: React.FC = () => {
                     <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
                   )}
                   {/* Button to open image upload modal */}
-                  <button onClick={() => handleUploadImage(group.id)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors cursor-pointer">
+                  <Button 
+                    onClick={() => handleUploadImage(group.id)} 
+                    variant='upload'
+                  >
                     Upload Thumbnail
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

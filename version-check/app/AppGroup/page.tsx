@@ -1,8 +1,8 @@
 'use client'
 
 import Image from 'next/image';
-import Header from '../Header/header';
-import Footer from '../Footer/footer';
+import Header from '../Components/header';
+import Footer from '../Components/footer';
 import { useAppGroup } from './useAppGroup';
 
 
