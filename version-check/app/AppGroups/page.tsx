@@ -81,7 +81,13 @@ const AppGroups: React.FC = () => {
                   />
                 </td>
                 <td className="border border-gray-300 p-2">{group.id}</td>
-                <td className="border border-gray-300 p-2">{group.groupName}</td>
+                <td className="border border-gray-300 p-2">
+                  <Link 
+                    href={`/AppGroup?groupId?=${group.id}`}
+                        className="text-blue-500 underline cursor-pointer hover:text-blue-700"
+                  >
+                    {group.groupName}
+                  </Link></td>
                 <td className="border border-gray-300 p-2">{group.appDescription}</td>
                 <td className="border border-gray-300 p-2">
                   {group.thumbnail && (
