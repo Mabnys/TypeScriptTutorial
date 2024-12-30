@@ -61,14 +61,14 @@ const Header: React.FC = () => {
         <span id="welcome-message" className="text-base">{welcomeMessage}</span>
 
         {/* Logout button */}
-        <a 
+        <Link 
           id="logout-button" 
-          href="#" 
+          href="/login" 
           onClick={handleLogout}
           className="text-blue-400 font-bold no-underline px-3 py-1.5 rounded-md bg-white border-2 border-red-400 transition-colors duration-300 cursor-pointer hover:bg-red-400 hover:text-white"
         >
           Log out
-        </a>
+        </Link>
       </div>
     </header>
   );
