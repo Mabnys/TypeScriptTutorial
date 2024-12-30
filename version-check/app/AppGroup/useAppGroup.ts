@@ -12,70 +12,75 @@ interface App {
     platformName: string;
     lastUpdateDate: string;
     thumbnail?: string;
-    appGroup?: { id: string };
 }
 
-// Define the structure of form inputs for adding/updating an app
-type FormInputs = {
+// Define the structure of form inputs for adding and updating an App
+interface AppFormInputs {
     appName: string;
     bundleId: string;
     minTargetVersion: string;
     recTargetVersion: string;
-    platformName: string;
-    appGroupId: string;
-};
+    platformName: 'iOS' | 'Android' | '';
+}
 
-export const useAppGroup = () => {
-    // State management
+export const useAppGroup = (groupId: string) => {
+    // State for storing apps
     const [apps, setApps] = useState<App[]>([]);
+    // State for storing the selected app ID
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
+    // State for controlling the modal
     const [modalOpen, setModalOpen] = useState(false);
+    // State for storing the modal title
     const [modalTitle, setModalTitle] = useState('');
+    // State for image upload
+    const [imageUploadAppId, setImageUploadAppId] = useState<string | null>(null);
+
     const router = useRouter();
 
     // Initialize react-hook-form
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FormInputs>();
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppFormInputs>();
 
     // Fetch the authentication token from cookies
     const getAuthToken = () => {
         return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
     };
 
-    // Fetch all apps from the API using Promise-based approach
+    // Fetch all apps from the API
     const fetchApps = useCallback(() => {
         // Get the authentication token
         const authToken = getAuthToken();
         
         // If no auth token is found, redirect to login page
         if (!authToken) {
-            router.push('/');
-            return Promise.reject('No auth token found');
+          router.push('/');
+          return Promise.reject('No auth token found');
         }
-
+      
         // Return a new Promise
         return new Promise((resolve, reject) => {
-            // Make the API call
-            fetch('http://localhost:8080/api/v1/get-all-apps', {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            })
-            .then(response => {
-                // Check if the response is ok (status in the range 200-299)
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Update the apps state with the fetched data
-                setApps(data);
-                resolve(data);
-            })
-            .catch(error => {
-                console.error('Error fetching apps:', error);
-                reject(error);
-            });
+          // Make the API call using fetch
+          fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          })
+          .then(response => {
+            // Check if the response is ok (status in the range 200-299)
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Update the apps state with the fetched data
+            setApps(data);
+            resolve(data);
+          })
+          .catch(error => {
+            console.error('Error fetching apps:', error);
+            reject(error);
+          });
         });
-    }, [router]);
+      }, [router, groupId]);
+      
 
     // Handle opening the modal for adding or updating an app
     const handleOpenModal = (title: string, appData?: App) => {
@@ -87,8 +92,7 @@ export const useAppGroup = () => {
             setValue('bundleId', appData.bundleId);
             setValue('minTargetVersion', appData.minimumTargetVersion);
             setValue('recTargetVersion', appData.recommendedTargetVersion);
-            setValue('platformName', appData.platformName);
-            setValue('appGroupId', appData.appGroup?.id || '');
+            setValue('platformName', appData.platformName as 'iOS' | 'Android');
         } else {
             // Reset form for adding new app
             reset();
@@ -96,7 +100,7 @@ export const useAppGroup = () => {
     };
 
     // Handle form submission for adding or updating an app
-    const onSubmit: SubmitHandler<FormInputs> = async (data) => {
+    const onSubmit: SubmitHandler<AppFormInputs> = async (data) => {
         const authToken = getAuthToken();
         if (!authToken) return;
 
@@ -112,7 +116,7 @@ export const useAppGroup = () => {
                     'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({ ...data, appGroupID: groupId }),
             });
 
             if (response.ok) {
@@ -148,6 +152,34 @@ export const useAppGroup = () => {
         }
     };
 
+    // Handle image upload
+    const handleImageUpload = async (file: File) => {
+        if (!imageUploadAppId) return;
+
+        const authToken = getAuthToken();
+        if (!authToken) return;
+
+        const formData = new FormData();
+        formData.append('vcImage', file);
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/v1/app/${imageUploadAppId}/upload-image`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}` },
+                body: formData,
+            });
+
+            if (response.ok) {
+                fetchApps(); // Refresh the app list after successful upload
+                setImageUploadAppId(null);
+            } else {
+                throw new Error('Failed to upload image');
+            }
+        } catch (error) {
+            console.error('Error uploading image:', error);
+        }
+    };
+
     // Fetch apps when the component mounts
     useEffect(() => {
         fetchApps().catch(error => console.error('Error in useEffect:', error));
@@ -167,6 +199,9 @@ export const useAppGroup = () => {
         handleOpenModal,
         onSubmit,
         handleDelete,
-        fetchApps
+        fetchApps,
+        imageUploadAppId,
+        setImageUploadAppId,
+        handleImageUpload
     };
 };

@@ -6,6 +6,7 @@ import { useGroupApps } from './useAppGroups';
 import Header from '../Components/header';
 import Footer from '../Components/footer';
 import Button from '../Components/button';
+import Link from 'next/link';
 
 const AppGroups: React.FC = () => {
   // Use the custom hook to manage app groups and modal state
