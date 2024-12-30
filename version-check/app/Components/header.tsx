@@ -50,7 +50,7 @@ const Header: React.FC = () => {
     <header className="bg-gray-800 text-white px-7.5 py-3.75 flex items-center justify-between fixed top-0 left-0 right-0 w-full h-15 z-10 shadow-lg">
       {/* Left side of the header */}
       <div className="header-left flex gap-5">
-        <Link href="/" id="appgroup-link" className="text-white no-underline text-base font-medium transition-colors duration-300 hover:text-blue-500">
+        <Link href="/AppGroups" id="appgroup-link" className="text-white no-underline text-base font-medium transition-colors duration-300 hover:text-blue-500">
           Version Check
         </Link>
       </div>
