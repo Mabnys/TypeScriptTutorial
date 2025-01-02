@@ -125,8 +125,7 @@ export const useAppGroup = (groupId: string) => {
                     recommendedTargetVersion: data.recTargetVersion,
                     platformName: data.platformName,
                     appGroupID: groupId,
-                  }),
-                // body: JSON.stringify({ ...data, appGroupID: groupId }),
+                }),
             });
 
             if (response.ok) {
@@ -185,7 +184,7 @@ export const useAppGroup = (groupId: string) => {
             });
 
             if (response.ok) {
-                alert(`${selectedAppId ? 'Updated' : 'Created'} App Group successfully!`);
+                alert(`${selectedAppId ? 'Uploaded' : 'Updated'} image successfully!`);
                 fetchApps();
             } else {
                 throw new Error('Failed to upload image');
