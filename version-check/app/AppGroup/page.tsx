@@ -112,14 +112,16 @@ export default function AppGroupPage() {
                                             className="cursor-pointer"
                                         />
                                     ) : (
-                                        <Button onClick={() => openImageUploadModal(app.id)}>Upload Image</Button>
+                                        <Button onClick={() => openImageUploadModal(app.id)} variant='upload'>
+                                            Upload Thumbnail
+                                        </Button>
                                     )}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
-
+                
                 {modalOpen && (
                     <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                         <div className="modal-content bg-white p-6 rounded-lg w-full max-w-md">
