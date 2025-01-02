@@ -163,6 +163,7 @@ export const useGroupApps = () => {
       .then(response => {
         if (response.ok) {
           alert('Image uploaded/updated successfully!');
+          alert(`${groupId ? 'Uploaded' : 'Updated'} image successfully!`);
           console.log("Image uploaded")
           fetchAppGroups();
         } else {
