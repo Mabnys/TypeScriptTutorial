@@ -1,8 +1,8 @@
+// useAppGroup.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
 
-// Define the structure of an App object
+// Define the structure of an App
 interface App {
     id: string;
     appName: string;
@@ -20,67 +20,63 @@ interface AppFormInputs {
     bundleId: string;
     minTargetVersion: string;
     recTargetVersion: string;
-    platformName: 'iOS' | 'Android' | '';
+    // Update platformName to include 'Select Platform' as a valid option
+    platformName: 'iOS' | 'Android' | 'Select Platform';
+
 }
 
+// Define the options for the platform picker
+const platformOptions = [
+    { value: 'Select Platform', label: 'Select Platform' },
+    { value: 'iOS', label: 'iOS' },
+    { value: 'Android', label: 'Android' },
+];
+
 export const useAppGroup = (groupId: string) => {
-    // State for storing apps
+    // State management
     const [apps, setApps] = useState<App[]>([]);
-    // State for storing the selected app ID
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
-    // State for controlling the modal
     const [modalOpen, setModalOpen] = useState(false);
-    // State for storing the modal title
     const [modalTitle, setModalTitle] = useState('');
-    // State for image upload
-    const [imageUploadAppId, setImageUploadAppId] = useState<string | null>(null);
 
-    const router = useRouter();
-
-    // Initialize react-hook-form
-    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppFormInputs>();
+    // Initialize react-hook-form with default values
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppFormInputs>({
+        defaultValues: {
+          platformName: 'Select Platform',
+        }
+    });
 
     // Fetch the authentication token from cookies
     const getAuthToken = () => {
         return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
     };
 
-    // Fetch all apps from the API
+    // Function to fetch all apps from the API
     const fetchApps = useCallback(() => {
-        // Get the authentication token
         const authToken = getAuthToken();
         
-        // If no auth token is found, redirect to login page
         if (!authToken) {
-          router.push('/');
-          return Promise.reject('No auth token found');
+            console.error('No auth token found');
+            return Promise.reject('No auth token found');
         }
       
-        // Return a new Promise
-        return new Promise((resolve, reject) => {
-          // Make the API call using fetch
-          fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
+        return fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
             headers: { 'Authorization': `Bearer ${authToken}` }
-          })
-          .then(response => {
-            // Check if the response is ok (status in the range 200-299)
-            if (!response.ok) {
-              throw new Error('Network response was not ok');
-            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
-          })
-          .then(data => {
-            // Update the apps state with the fetched data
+        })
+        .then(data => {
             setApps(data);
-            resolve(data);
-          })
-          .catch(error => {
-            console.error('Error fetching apps:', error);
-            reject(error);
-          });
+            return data;
         });
-      }, [router, groupId]);
-      
+    }, [groupId]);
+
+    // Fetch apps when the component mounts or groupId changes
+    useEffect(() => {
+        fetchApps().catch(error => console.error('Error fetching apps:', error));
+    }, [fetchApps]);
 
     // Handle opening the modal for adding or updating an app
     const handleOpenModal = (title: string, appData?: App) => {
@@ -94,13 +90,19 @@ export const useAppGroup = (groupId: string) => {
             setValue('recTargetVersion', appData.recommendedTargetVersion);
             setValue('platformName', appData.platformName as 'iOS' | 'Android');
         } else {
-            // Reset form for adding new app
-            reset();
+            // Reset form for adding new app, but keep platformName as 'Select Platform'
+            reset({ platformName: 'Select Platform' });
         }
     };
 
     // Handle form submission for adding or updating an app
     const onSubmit: SubmitHandler<AppFormInputs> = async (data) => {
+        // Validate that a platform has been selected
+        if (data.platformName === 'Select Platform') {
+            alert('Please select a platform');
+            return;
+        }
+
         const authToken = getAuthToken();
         if (!authToken) return;
 
@@ -116,12 +118,21 @@ export const useAppGroup = (groupId: string) => {
                     'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ ...data, appGroupID: groupId }),
+                body: JSON.stringify({
+                    appName: data.appName,
+                    bundleId: data.bundleId,
+                    minimumTargetVersion: data.minTargetVersion,
+                    recommendedTargetVersion: data.recTargetVersion,
+                    platformName: data.platformName,
+                    appGroupID: groupId,
+                  }),
+                // body: JSON.stringify({ ...data, appGroupID: groupId }),
             });
 
             if (response.ok) {
+                alert(`${groupId ? 'Updated' : 'Created'} App successfully!`);
                 setModalOpen(false);
-                fetchApps(); // Refresh the app list after successful submission
+                fetchApps();
             } else {
                 throw new Error('Form submission failed');
             }
@@ -133,28 +144,32 @@ export const useAppGroup = (groupId: string) => {
     // Handle deleting an app
     const handleDelete = async () => {
         if (!selectedAppId) return;
-        const authToken = getAuthToken();
-        if (!authToken) return;
 
-        try {
-            const response = await fetch(`http://localhost:8080/api/v1/delete-app?APPID=${selectedAppId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${authToken}` },
-            });
-
-            if (response.ok) {
-                fetchApps(); // Refresh the app list after successful deletion
-            } else {
-                throw new Error('Failed to delete app');
+        if (confirm('Are you sure you want to delete this app?')) {
+            const authToken = getAuthToken();
+            if (!authToken) return;
+    
+            try {
+                const response = await fetch(`http://localhost:8080/api/v1/delete-app?APPID=${selectedAppId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                });
+    
+                if (response.ok) {
+                    alert('App deleted successfully!');
+                    fetchApps();
+                } else {
+                    throw new Error('Failed to delete app');
+                }
+            } catch (error) {
+                console.error('Error deleting app:', error);
             }
-        } catch (error) {
-            console.error('Error deleting app:', error);
         }
     };
 
-    // Handle image upload
+    // Handle image upload for an app
     const handleImageUpload = async (file: File) => {
-        if (!imageUploadAppId) return;
+        if (!selectedAppId) return;
 
         const authToken = getAuthToken();
         if (!authToken) return;
@@ -163,15 +178,15 @@ export const useAppGroup = (groupId: string) => {
         formData.append('vcImage', file);
 
         try {
-            const response = await fetch(`http://localhost:8080/api/v1/app/${imageUploadAppId}/upload-image`, {
+            const response = await fetch(`http://localhost:8080/api/v1/app/${selectedAppId}/upload-image`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authToken}` },
                 body: formData,
             });
 
             if (response.ok) {
-                fetchApps(); // Refresh the app list after successful upload
-                setImageUploadAppId(null);
+                alert(`${selectedAppId ? 'Updated' : 'Created'} App Group successfully!`);
+                fetchApps();
             } else {
                 throw new Error('Failed to upload image');
             }
@@ -180,12 +195,6 @@ export const useAppGroup = (groupId: string) => {
         }
     };
 
-    // Fetch apps when the component mounts
-    useEffect(() => {
-        fetchApps().catch(error => console.error('Error in useEffect:', error));
-    }, [fetchApps]);
-
-    // Return necessary functions and state for the app group page
     return {
         apps,
         selectedAppId,
@@ -200,8 +209,7 @@ export const useAppGroup = (groupId: string) => {
         onSubmit,
         handleDelete,
         fetchApps,
-        imageUploadAppId,
-        setImageUploadAppId,
-        handleImageUpload
+        handleImageUpload,
+        platformOptions, // Export platformOptions for use in the component
     };
 };

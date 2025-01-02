@@ -1,15 +1,15 @@
 'use client'
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { useGroupApps } from './useAppGroups';
 import Header from '../Components/header';
 import Footer from '../Components/footer';
 import Button from '../Components/button';
 import Link from 'next/link';
+import ImageUploadModal from '../Components/imageUploadModal';
 
 const AppGroups: React.FC = () => {
-  // Use the custom hook to manage app groups and modal state
   const {
     appGroups,
     selectedGroupId,
@@ -28,35 +28,33 @@ const AppGroups: React.FC = () => {
     handleUploadImage,
   } = useGroupApps();
 
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [selectedGroupIdForImage, setSelectedGroupIdForImage] = useState<string | null>(null);
+
+  // Function to open the image upload modal
+  const openImageUploadModal = (groupId: string) => {
+    setSelectedGroupIdForImage(groupId);
+    setIsImageModalOpen(true);
+  };
+
+  // Function to handle image upload
+  const handleImageUpload = (file: File) => {
+    if (selectedGroupIdForImage) {
+      handleUploadImage(selectedGroupIdForImage, file);
+    }
+  };
+
   return (
-    // Wrapper div to create a flex container for the entire page
     <div className="flex flex-col min-h-screen">
       <Header />
-      {/* Main content area with flex-grow to push footer to bottom */}
       <main className="flex-grow pt-24 text-center mx-auto max-w-4xl">
         <h2 className="text-2xl font-bold mb-4">App Group Table</h2>
         
         <div className="flex space-x-2 mb-4">
-          <Button onClick={handleRefresh}>
-            Refresh App Group List
-          </Button>
-          <Button onClick={handleAdd}> 
-            Add App Group
-          </Button>
-          <Button 
-            onClick={handleUpdate}
-            disabled={!selectedGroupId}
-            variant='secondary'
-          >
-            Update App Group
-          </Button>
-          <Button 
-            onClick={handleDelete}
-            disabled={!selectedGroupId}
-            variant='danger'
-          >
-            Delete App Group
-          </Button>
+          <Button onClick={handleRefresh}>Refresh App Group List</Button>
+          <Button onClick={handleAdd}>Add App Group</Button>
+          <Button onClick={handleUpdate} disabled={!selectedGroupId} variant='secondary'>Update App Group</Button>
+          <Button onClick={handleDelete} disabled={!selectedGroupId} variant='danger'>Delete App Group</Button>
         </div>
         
         <table className="w-full border-collapse border border-gray-300">
@@ -83,21 +81,16 @@ const AppGroups: React.FC = () => {
                 </td>
                 <td className="border border-gray-300 p-2">{group.id}</td>
                 <td className="border border-gray-300 p-2">
-                  <Link 
-                    href={`/AppGroup?groupId?=${group.id}`}
-                        className="text-blue-500 underline cursor-pointer hover:text-blue-700"
-                  >
+                  <Link href={`/AppGroup?groupId=${group.id}`} className="text-blue-500 underline cursor-pointer hover:text-blue-700">
                     {group.groupName}
-                  </Link></td>
+                  </Link>
+                </td>
                 <td className="border border-gray-300 p-2">{group.appDescription}</td>
                 <td className="border border-gray-300 p-2">
                   {group.thumbnail && (
                     <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
                   )}
-                  <Button 
-                    onClick={() => handleUploadImage(group.id)} 
-                    variant='upload'
-                  >
+                  <Button onClick={() => openImageUploadModal(group.id)} variant='upload'>
                     Upload Thumbnail
                   </Button>
                 </td>
@@ -106,14 +99,10 @@ const AppGroups: React.FC = () => {
           </tbody>
         </table>
 
-        {/* Modal Structure */}
         {isModalOpen && (
           <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="modal-content bg-white p-6 rounded-lg w-full max-w-md">
-              <span 
-                className="close text-gray-500 hover:text-gray-700 cursor-pointer float-right" 
-                onClick={() => setIsModalOpen(false)}>&times;
-              </span>
+              <span className="close text-gray-500 hover:text-gray-700 cursor-pointer float-right" onClick={() => setIsModalOpen(false)}>&times;</span>
               <h2 id="modalTitle" className="text-xl font-bold mb-4">{modalTitle}</h2>
 
               <form id="groupForm" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -138,6 +127,13 @@ const AppGroups: React.FC = () => {
             </div>
           </div>
         )}
+
+        <ImageUploadModal
+          isOpen={isImageModalOpen}
+          onClose={() => setIsImageModalOpen(false)}
+          onUpload={handleImageUpload}
+          headerText="Upload/Change Thumbnail for App Group"
+        />
       </main>
       <Footer />
     </div>
