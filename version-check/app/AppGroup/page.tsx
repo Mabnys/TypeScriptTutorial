@@ -101,22 +101,22 @@ export default function AppGroupPage() {
                                 <td>{app.recommendedTargetVersion}</td>
                                 <td>{app.platformName}</td>
                                 <td>{new Date(app.lastUpdateDate).toLocaleDateString()}</td>
-                                <td>
-                                    {app.thumbnail ? (
-                                        <Image 
-                                            src={`data:image/png;base64,${app.thumbnail}`} 
-                                            alt="App Thumbnail" 
-                                            width={50} 
-                                            height={50} 
-                                            onClick={() => openImageUploadModal(app.id)}
-                                            className="cursor-pointer"
-                                        />
-                                    ) : (
-                                        <Button onClick={() => openImageUploadModal(app.id)} variant='upload'>
-                                            Upload Thumbnail
-                                        </Button>
-                                    )}
-                                </td>
+                        <td>
+                            {app.images ? (
+                                <Image 
+                                    src={`data:image/png;base64,${app.images[0].blob}`}
+                                    alt={`Thumbnail for ${app.appName}`}
+                                    width={50} 
+                                    height={50} 
+                                    onClick={() => openImageUploadModal(app.id)}
+                                    className="cursor-pointer"
+                                />
+                            ) : (
+                                <Button onClick={() => openImageUploadModal(app.id)} variant='upload'>
+                                    Upload Thumbnail
+                                </Button>
+                            )}
+                        </td>
                             </tr>
                         ))}
                     </tbody>

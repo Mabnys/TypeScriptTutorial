@@ -1,4 +1,3 @@
-// useAppGroup.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 
@@ -11,7 +10,11 @@ interface App {
     recommendedTargetVersion: string;
     platformName: string;
     lastUpdateDate: string;
-    thumbnail?: string;
+    images?: [ImageBlob];
+}
+
+export interface ImageBlob {
+  blob: string
 }
 
 // Define the structure of form inputs for adding and updating an App
@@ -68,8 +71,15 @@ export const useAppGroup = (groupId: string) => {
             return response.json();
         })
         .then(data => {
-            setApps(data);
-            return data;
+            const processedData = data.map((app: App) => ({
+            ...app,
+                // thumbnail: group.images && group.images[0].blob
+                thumbnail: app.images && app.images.length > 0
+                ? `data:imaage/png;base64,${app.images[0].blob}`
+                : null
+            }));
+            setApps(processedData);
+            return processedData;
         });
     }, [groupId]);
 
@@ -126,7 +136,6 @@ export const useAppGroup = (groupId: string) => {
                     platformName: data.platformName,
                     appGroupID: groupId,
                   }),
-                // body: JSON.stringify({ ...data, appGroupID: groupId }),
             });
 
             if (response.ok) {
@@ -181,17 +190,18 @@ export const useAppGroup = (groupId: string) => {
             const response = await fetch(`http://localhost:8080/api/v1/app/${selectedAppId}/upload-image`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authToken}` },
-                body: formData,
+                body: formData,       
             });
 
             if (response.ok) {
-                alert(`${selectedAppId ? 'Updated' : 'Created'} App Group successfully!`);
+                alert(`${selectedAppId ? 'Updated' : 'Created'} App successfully!`);
                 fetchApps();
             } else {
                 throw new Error('Failed to upload image');
             }
         } catch (error) {
             console.error('Error uploading image:', error);
+            alert('An error occurred while uploading the image.');
         }
     };
 
