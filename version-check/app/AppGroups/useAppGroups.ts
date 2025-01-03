@@ -1,4 +1,3 @@
-// useAppGroups.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,11 @@ export interface AppGroup {
   id: string;
   groupName: string;
   appDescription: string;
-  thumbnail?: string;
+  image?: ImageBlob;
+}
+
+export interface ImageBlob {
+  blob: string
 }
 
 // Define the structure of form data for AppGroup
@@ -18,23 +21,19 @@ export interface AppGroupFormData {
 }
 
 export const useGroupApps = () => {
-  // State management
   const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Add App Group');
 
-  // Initialize react-hook-form
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AppGroupFormData>();
 
   const router = useRouter();
 
-  // Fetch the authentication token from cookies
   const getAuthToken = () => {
     return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
   };
 
-  // Function to fetch app groups from the API
   const fetchAppGroups = useCallback(() => {
     const authToken = getAuthToken();
 
@@ -51,23 +50,25 @@ export const useGroupApps = () => {
         return response.json();
       })
       .then(data => {
-        setAppGroups(data);
-        return data;
+        const processedData = data.map((group: AppGroup) => ({
+          ...group,
+          thumbnail: group.image && group.image.blob
+            ? `data:image/png;base64,${group.image.blob}`
+            : null
+        }));
+        setAppGroups(processedData);
+        return processedData;
       });
   }, [router]);
 
-  // Fetch app groups on component mount
   useEffect(() => {
     fetchAppGroups().catch(error => console.error('Error in useEffect:', error));
   }, [fetchAppGroups]);
 
-  // Function to handle group selection
   const handleSelectGroup = (id: string) => setSelectedGroupId(id);
 
-  // Function to refresh app groups
   const handleRefresh = () => fetchAppGroups();
 
-  // Function to open modal for adding an app group
   const handleAdd = () => {
     setModalTitle('Add App Group');
     reset({ appName: '', appDescription: '' });
@@ -75,7 +76,6 @@ export const useGroupApps = () => {
     setIsModalOpen(true);
   };
 
-  // Function to open modal for updating an app group
   const handleUpdate = () => {
     if (!selectedGroupId) return alert('No group selected.');
 
@@ -90,7 +90,6 @@ export const useGroupApps = () => {
     }
   };
 
-  // Function to delete an app group
   const handleDelete = () => {
     if (!selectedGroupId) return alert('No group selected.');
 
@@ -103,24 +102,19 @@ export const useGroupApps = () => {
         headers: { Authorization: `Bearer ${authToken}` },
       })
         .then(response => {
-          if (response.ok) {
-            alert('App Group deleted successfully!');
-            fetchAppGroups();
-          } else {
-            throw new Error('Failed to delete App Group');
-          }
+          if (response.ok) fetchAppGroups();
+          else throw new Error('Failed to delete app group');
         })
-        .catch(error => console.error('Error deleting App Group:', error));
+        .catch(error => console.error('Error deleting app group:', error));
     }
   };
 
-  // Form submission handler (for both add and update)
   const onSubmit: SubmitHandler<AppGroupFormData> = (data) => {
     const authToken = getAuthToken();
     if (!authToken) return alert('Authentication required.');
 
     const method = selectedGroupId ? 'PUT' : 'POST';
-    const url = selectedGroupId 
+    const url = selectedGroupId
       ? `http://localhost:8080/api/v1/update-appgroup?APPID=${selectedGroupId}`
       : 'http://localhost:8080/api/v1/create-appgroup';
 
@@ -138,7 +132,7 @@ export const useGroupApps = () => {
       .then(response => {
         if (response.ok) {
           alert(`${selectedGroupId ? 'Updated' : 'Created'} App Group successfully!`);
-          setIsModalOpen(false); 
+          setIsModalOpen(false);
           fetchAppGroups();
         } else {
           throw new Error('Form submission failed');
@@ -147,34 +141,30 @@ export const useGroupApps = () => {
       .catch(error => console.error('Error submitting form:', error));
   };
 
-  // Function to handle image upload for an app group
-  const handleUploadImage = (groupId: string, file: File) => {
+  const handleUploadImage = async (groupId: string, file: File) => {
     const authToken = getAuthToken();
     if (!authToken) return alert('Authentication required.');
 
     const formData = new FormData();
     formData.append('vcImage', file);
 
-    fetch(`http://localhost:8080/api/v1/app-group/${groupId}/upload-image`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${authToken}` },
-      body: formData,
-    })
-      .then(response => {
-        if (response.ok) {
-          alert('Image uploaded/updated successfully!');
-          alert(`${groupId ? 'Uploaded' : 'Updated'} image successfully!`);
-          console.log("Image uploaded")
-          fetchAppGroups();
-        } else {
-          console.error("Failed to upload!")
-          throw new Error('Failed to upload image.');
-        }
-      })
-      .catch(error => {
-        console.error('Error uploading image:', error);
-        alert('An error occurred while uploading the image.');
+    try {
+      const response = await fetch(`http://localhost:8080/api/v1/app-group/${groupId}/upload-image`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: formData,
       });
+
+      if (response.ok) {
+        alert(`${groupId ? 'Uploaded' : 'Updated'} image successfully!`);
+        fetchAppGroups();
+      } else {
+        throw new Error('Failed to upload image.');
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('An error occurred while uploading the image.');
+    }
   };
 
   return {

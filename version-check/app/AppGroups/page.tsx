@@ -41,6 +41,7 @@ const AppGroups: React.FC = () => {
   const handleImageUpload = (file: File) => {
     if (selectedGroupIdForImage) {
       handleUploadImage(selectedGroupIdForImage, file);
+      setIsImageModalOpen(false);
     }
   };
 
@@ -87,12 +88,20 @@ const AppGroups: React.FC = () => {
                 </td>
                 <td className="border border-gray-300 p-2">{group.appDescription}</td>
                 <td className="border border-gray-300 p-2">
-                  {group.thumbnail && (
-                    <Image src={group.thumbnail} alt="Thumbnail" width={50} height={50} />
+                  {group.image ? (
+                      <Image 
+                          src={`data:image/png;base64,${group.image.blob}`}
+                          alt={`Thumbnail for ${group.groupName}`}
+                          width={50} 
+                          height={50} 
+                          className="cursor-pointer"
+                          onClick={() => openImageUploadModal(group.id)}
+                      />
+                  ) : (
+                      <Button onClick={() => openImageUploadModal(group.id)} variant='upload'>
+                          Upload Thumbnail
+                      </Button>
                   )}
-                  <Button onClick={() => openImageUploadModal(group.id)} variant='upload'>
-                    Upload Thumbnail
-                  </Button>
                 </td>
               </tr>
             ))}
@@ -127,7 +136,6 @@ const AppGroups: React.FC = () => {
             </div>
           </div>
         )}
-
         <ImageUploadModal
           isOpen={isImageModalOpen}
           onClose={() => setIsImageModalOpen(false)}
