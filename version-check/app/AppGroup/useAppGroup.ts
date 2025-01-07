@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
+import { useRefreshToken } from '../Components/useRefreshToken';
 
 // Define the structure of an App
 interface App {
@@ -23,72 +24,77 @@ interface AppFormInputs {
     bundleId: string;
     minTargetVersion: string;
     recTargetVersion: string;
-    // Update platformName to include 'Select Platform' as a valid option
     platformName: 'iOS' | 'Android' | 'Select Platform';
-
 }
 
-// Define the options for the platform picker
-const platformOptions = [
-    { value: 'Select Platform', label: 'Select Platform' },
-    { value: 'iOS', label: 'iOS' },
-    { value: 'Android', label: 'Android' },
-];
-
 export const useAppGroup = (groupId: string) => {
-    // State management
     const [apps, setApps] = useState<App[]>([]);
     const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [modalTitle, setModalTitle] = useState('');
 
-    // Initialize react-hook-form with default values
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppFormInputs>({
         defaultValues: {
           platformName: 'Select Platform',
         }
     });
 
-    // Fetch the authentication token from cookies
+    const { refreshAccessToken } = useRefreshToken();
+
+    // Function to get the auth token from cookies
     const getAuthToken = () => {
         return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
     };
 
-    // Function to fetch all apps from the API
-    const fetchApps = useCallback(() => {
-        const authToken = getAuthToken();
-        
-        if (!authToken) {
-            console.error('No auth token found');
-            return Promise.reject('No auth token found');
-        }
-      
-        return fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-        })
-        .then(response => {
+    // Function to fetch all apps for the given group
+    const fetchApps = useCallback(async () => {
+        try {
+            let authToken = getAuthToken();
+
+            if (!authToken) {
+                // Try to refresh the token if it's not available
+                authToken = await refreshAccessToken();
+            }
+
+            const response = await fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+
+            if (response.status === 401) {
+                // If unauthorized, try refreshing the token
+                authToken = await refreshAccessToken();
+                // Retry the request with the new token
+                const retryResponse = await fetch(`http://localhost:8080/api/v1/get-all-apps?appGroupID=${groupId}`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (!retryResponse.ok) throw new Error('Network response was not ok after token refresh');
+                return retryResponse.json();
+            }
+
             if (!response.ok) throw new Error('Network response was not ok');
-            return response.json();
-        })
-        .then(data => {
+            const data = await response.json();
+            
+            // Process the fetched data
             const processedData = data.map((app: App) => ({
-            ...app,
-                // thumbnail: group.images && group.images[0].blob
+                ...app,
                 thumbnail: app.images && app.images.length > 0
-                ? `data:imaage/png;base64,${app.images[0].blob}`
-                : null
+                    ? `data:image/png;base64,${app.images[0].blob}`
+                    : null
             }));
             setApps(processedData);
             return processedData;
-        });
-    }, [groupId]);
+        } catch (error) {
+            console.error('Error fetching apps:', error);
+            throw error;
+        }
+    }, [groupId, refreshAccessToken]);
 
     // Fetch apps when the component mounts or groupId changes
     useEffect(() => {
         fetchApps().catch(error => console.error('Error fetching apps:', error));
     }, [fetchApps]);
 
-    // Handle opening the modal for adding or updating an app
+    // Handler for opening the modal for adding or updating an app
     const handleOpenModal = (title: string, appData?: App) => {
         setModalTitle(title);
         setModalOpen(true);
@@ -105,7 +111,7 @@ export const useAppGroup = (groupId: string) => {
         }
     };
 
-    // Handle form submission for adding or updating an app
+    // Handler for form submission
     const onSubmit: SubmitHandler<AppFormInputs> = async (data) => {
         // Validate that a platform has been selected
         if (data.platformName === 'Select Platform') {
@@ -135,11 +141,11 @@ export const useAppGroup = (groupId: string) => {
                     recommendedTargetVersion: data.recTargetVersion,
                     platformName: data.platformName,
                     appGroupID: groupId,
-                  }),
+                }),
             });
 
             if (response.ok) {
-                alert(`${groupId ? 'Updated' : 'Created'} App successfully!`);
+                alert(`${selectedAppId ? 'Updated' : 'Created'} App successfully!`);
                 setModalOpen(false);
                 fetchApps();
             } else {
@@ -150,7 +156,7 @@ export const useAppGroup = (groupId: string) => {
         }
     };
 
-    // Handle deleting an app
+    // Handler for deleting an app
     const handleDelete = async () => {
         if (!selectedAppId) return;
 
@@ -176,7 +182,7 @@ export const useAppGroup = (groupId: string) => {
         }
     };
 
-    // Handle image upload for an app
+    // Handler for uploading an image for an app
     const handleImageUpload = async (file: File) => {
         if (!selectedAppId) return;
 
@@ -220,6 +226,5 @@ export const useAppGroup = (groupId: string) => {
         handleDelete,
         fetchApps,
         handleImageUpload,
-        platformOptions, // Export platformOptions for use in the component
     };
 };

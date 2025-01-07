@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
+import { useRefreshToken } from '../Components/useRefreshToken';
 
 // Define the structure of an AppGroup
 export interface AppGroup {
@@ -28,47 +29,69 @@ export const useGroupApps = () => {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<AppGroupFormData>();
 
-  const router = useRouter();
+  // const router = useRouter();
+  const { refreshAccessToken } = useRefreshToken();
 
+  // Function to get the auth token from cookies
   const getAuthToken = () => {
     return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
   };
 
-  const fetchAppGroups = useCallback(() => {
-    const authToken = getAuthToken();
+  // Function to fetch all app groups
+  const fetchAppGroups = useCallback(async () => {
+    try {
+      let authToken = getAuthToken();
 
-    if (!authToken) {
-      router.push('/');
-      return Promise.reject('No auth token found');
-    }
+      if (!authToken) {
+        // Try to refresh the token if it's not available
+        authToken = await refreshAccessToken();
+      }
 
-    return fetch('http://localhost:8080/api/v1/get-all-appgroups', {
-      headers: { 'Authorization': `Bearer ${authToken}` },
-    })
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        const processedData = data.map((group: AppGroup) => ({
-          ...group,
-          thumbnail: group.image && group.image.blob
-            ? `data:image/png;base64,${group.image.blob}`
-            : null
-        }));
-        setAppGroups(processedData);
-        return processedData;
+      const response = await fetch('http://localhost:8080/api/v1/get-all-appgroups', {
+        headers: { 'Authorization': `Bearer ${authToken}` },
       });
-  }, [router]);
 
+      if (response.status === 401) {
+        // If unauthorized, try refreshing the token
+        authToken = await refreshAccessToken();
+        // Retry the request with the new token
+        const retryResponse = await fetch('http://localhost:8080/api/v1/get-all-appgroups', {
+          headers: { 'Authorization': `Bearer ${authToken}` },
+        });
+        if (!retryResponse.ok) throw new Error('Network response was not ok after token refresh');
+        return retryResponse.json();
+      }
+
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      
+      // Process the fetched data
+      const processedData = data.map((group: AppGroup) => ({
+        ...group,
+        thumbnail: group.image && group.image.blob
+          ? `data:image/png;base64,${group.image.blob}`
+          : null
+      }));
+      setAppGroups(processedData);
+      return processedData;
+    } catch (error) {
+      console.error('Error fetching app groups:', error);
+      throw error;
+    }
+  }, [refreshAccessToken]);
+
+  // Fetch app groups when the component mounts
   useEffect(() => {
     fetchAppGroups().catch(error => console.error('Error in useEffect:', error));
   }, [fetchAppGroups]);
 
+  // Handler for selecting a group
   const handleSelectGroup = (id: string) => setSelectedGroupId(id);
 
+  // Handler for refreshing the app group list
   const handleRefresh = () => fetchAppGroups();
 
+  // Handler for opening the add modal
   const handleAdd = () => {
     setModalTitle('Add App Group');
     reset({ appName: '', appDescription: '' });
@@ -76,6 +99,7 @@ export const useGroupApps = () => {
     setIsModalOpen(true);
   };
 
+  // Handler for opening the update modal
   const handleUpdate = () => {
     if (!selectedGroupId) return alert('No group selected.');
 
@@ -90,6 +114,7 @@ export const useGroupApps = () => {
     }
   };
 
+  // Handler for deleting an app group
   const handleDelete = () => {
     if (!selectedGroupId) return alert('No group selected.');
 
@@ -109,6 +134,7 @@ export const useGroupApps = () => {
     }
   };
 
+  // Handler for form submission
   const onSubmit: SubmitHandler<AppGroupFormData> = (data) => {
     const authToken = getAuthToken();
     if (!authToken) return alert('Authentication required.');
@@ -141,6 +167,7 @@ export const useGroupApps = () => {
       .catch(error => console.error('Error submitting form:', error));
   };
 
+  // Handler for uploading an image
   const handleUploadImage = async (groupId: string, file: File) => {
     const authToken = getAuthToken();
     if (!authToken) return alert('Authentication required.');
