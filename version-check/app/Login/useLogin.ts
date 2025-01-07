@@ -35,6 +35,7 @@ export const useLogin = () => {
 
         // Set authentication cookies
         document.cookie = `authToken=${responseData.access_token}; path=/; max-age=3600; SameSite=Lax;`;
+        document.cookie = `refreshToken=${responseData.refresh_token}; path=/; max-age=86400; SameSite=Lax;`; // Store refresh token for 24 hours
         document.cookie = `userEmail=${data.username}; path=/; max-age=3600; SameSite=Lax;`;
         // Redirect to app group page on successful login
         router.push('/AppGroups');
