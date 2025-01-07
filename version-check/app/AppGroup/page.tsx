@@ -1,23 +1,26 @@
 'use client'
 
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Header from '../Components/header';
 import Footer from '../Components/footer';
 import { useAppGroup } from './useAppGroup';
 import Button from '../Components/button';
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
 import ImageUploadModal from '../Components/imageUploadModal';
 
 export default function AppGroupPage() {
+    // Get the groupId from the URL parameters
     const searchParams = useSearchParams();
     const [groupId, setGroupId] = useState<string | null>(null);
 
+    // Set the groupId when the component mounts or when searchParams change
     useEffect(() => {
         const groupIdParam = searchParams.get('groupId');
         setGroupId(groupIdParam);
     }, [searchParams]);
 
+    // Use the custom hook to manage app group state and actions
     const {
         apps,
         selectedAppId,
@@ -35,14 +38,17 @@ export default function AppGroupPage() {
         handleImageUpload: handleAppImageUpload,
     } = useAppGroup(groupId || '');
 
+    // State for image upload modal
     const [isImageModalOpen, setIsImageModalOpen] = useState(false);
     const [selectedAppIdForImage, setSelectedAppIdForImage] = useState<string | null>(null);
 
+    // Function to open the image upload modal
     const openImageUploadModal = (appId: string) => {
         setSelectedAppIdForImage(appId);
         setIsImageModalOpen(true);
     };
 
+    // Function to handle image upload
     const handleImageUpload = (file: File) => {
         if (selectedAppIdForImage) {
             handleAppImageUpload(file);
@@ -55,6 +61,7 @@ export default function AppGroupPage() {
             <main className="flex-grow pt-24 text-center mx-auto max-w-4xl">
                 <h2 className="text-2xl font-bold mb-4">Apps in Selected Group</h2>
                 
+                {/* Action buttons */}
                 <div className="flex space-x-2 mb-4">
                     <Button onClick={fetchApps}>Refresh App List</Button>
                     <Button onClick={() => handleOpenModal('Add')}>Add App</Button>
@@ -68,7 +75,9 @@ export default function AppGroupPage() {
                     <Button onClick={handleDelete} disabled={!selectedAppId} variant='danger'>Delete App</Button>
                 </div>
 
+                {/* Apps table */}
                 <table className="w-full border-collapse border border-gray-300">
+                    {/* Table header */}
                     <thead>
                         <tr className="bg-gray-100">
                             <th className="border border-gray-300 p-2">Select</th>
@@ -82,9 +91,11 @@ export default function AppGroupPage() {
                             <th className="border border-gray-300 p-2">Thumbnail</th>
                         </tr>
                     </thead>
+                    {/* Table body */}
                     <tbody>
                         {apps.map(app => (
                             <tr key={app.id} className="hover:bg-gray-50">
+                                {/* App selection radio button */}
                                 <td className="border border-gray-300 p-2">
                                     <input
                                         type="radio"
@@ -94,6 +105,7 @@ export default function AppGroupPage() {
                                         checked={selectedAppId === app.id}
                                     />
                                 </td>
+                                {/* App details */}
                                 <td className="border border-gray-300 p-2">{app.id}</td>
                                 <td className="border border-gray-300 p-2">{app.appName}</td>
                                 <td className="border border-gray-300 p-2">{app.bundleId}</td>
@@ -101,29 +113,29 @@ export default function AppGroupPage() {
                                 <td className="border border-gray-300 p-2">{app.recommendedTargetVersion}</td>
                                 <td className="border border-gray-300 p-2">{app.platformName}</td>
                                 <td className="border border-gray-300 p-2">{new Date(app.lastUpdateDate).toLocaleDateString()}</td>
-                      
-                        <td className="border border-gray-300 p-2">
-                            {app.images ? (
-                                <Image 
-                                    src={`data:image/png;base64,${app.images[0].blob}`}
-                                    alt={`Thumbnail for ${app.appName}`}
-                                    width={50} 
-                                    height={50} 
-                                    onClick={() => openImageUploadModal(app.id)}
-                                    className="cursor-pointer"
-                                />
-                            ) : (
-                                <Button onClick={() => openImageUploadModal(app.id)} variant='upload'>
-                                    Upload Thumbnail
-                                </Button>
-                            )}
-                        </td>
+                                {/* App thumbnail */}
+                                <td className="border border-gray-300 p-2">
+                                    {app.images ? (
+                                        <Image 
+                                            src={`data:image/png;base64,${app.images[0].blob}`}
+                                            alt={`Thumbnail for ${app.appName}`}
+                                            width={50} 
+                                            height={50} 
+                                            onClick={() => openImageUploadModal(app.id)}
+                                            className="cursor-pointer"
+                                        />
+                                    ) : (
+                                        <Button onClick={() => openImageUploadModal(app.id)} variant='upload'>
+                                            Upload Thumbnail
+                                        </Button>
+                                    )}
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
 
-                
+                {/* Modal for adding/updating apps */}
                 {modalOpen && (
                     <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                         <div className="modal-content bg-white p-6 rounded-lg w-full max-w-md">
@@ -137,6 +149,7 @@ export default function AppGroupPage() {
                             <h2 id="modalTitle" className="text-xl font-bold mb-4">{modalTitle}</h2>
 
                             <form id="appForm" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                                {/* Form fields */}
                                 <input 
                                     {...register("appName", { required: "App Name is required" })} 
                                     placeholder="App Name" 
@@ -158,15 +171,14 @@ export default function AppGroupPage() {
                                 />
                                 {errors.minTargetVersion && <span className="text-red-500 text-sm">{errors.minTargetVersion.message}</span>}
 
-
                                 <input 
                                     {...register("recTargetVersion", { required: "Recommended Target Version is required" })} 
                                     placeholder="Recommended Target Version" 
                                     className={`w-full p-2 border rounded ${errors.recTargetVersion ? 'border-red-300' : 'border-gray-300'}`}
                                 />
                                 {errors.recTargetVersion && <span className="text-red-500 text-sm">{errors.recTargetVersion.message}</span>}
+                                
                                 {/* Platform Selection Dropdown */}
-                                {/* Wrapper div for centering the dropdown */}
                                 <div className="flex justify-center">
                                     <select 
                                         {...register("platformName", { required: "Platform selection is required" })}
@@ -187,7 +199,7 @@ export default function AppGroupPage() {
                     </div>
                 )}
 
-
+                {/* Image upload modal */}
                 <ImageUploadModal
                     isOpen={isImageModalOpen}
                     onClose={() => setIsImageModalOpen(false)}

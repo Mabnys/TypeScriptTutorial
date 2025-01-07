@@ -10,6 +10,7 @@ import Link from 'next/link';
 import ImageUploadModal from '../Components/imageUploadModal';
 
 const AppGroups: React.FC = () => {
+  // Use the custom hook to manage app groups state and actions
   const {
     appGroups,
     selectedGroupId,
@@ -28,6 +29,7 @@ const AppGroups: React.FC = () => {
     handleUploadImage,
   } = useGroupApps();
 
+  // State for image upload modal
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [selectedGroupIdForImage, setSelectedGroupIdForImage] = useState<string | null>(null);
 
@@ -51,6 +53,7 @@ const AppGroups: React.FC = () => {
       <main className="flex-grow pt-24 text-center mx-auto max-w-4xl">
         <h2 className="text-2xl font-bold mb-4">App Group Table</h2>
         
+        {/* Action buttons */}
         <div className="flex space-x-2 mb-4">
           <Button onClick={handleRefresh}>Refresh App Group List</Button>
           <Button onClick={handleAdd}>Add App Group</Button>
@@ -58,6 +61,7 @@ const AppGroups: React.FC = () => {
           <Button onClick={handleDelete} disabled={!selectedGroupId} variant='danger'>Delete App Group</Button>
         </div>
         
+        {/* App groups table */}
         <table className="w-full border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
@@ -71,6 +75,7 @@ const AppGroups: React.FC = () => {
           <tbody>
             {appGroups.map((group) => (
               <tr key={group.id} className="hover:bg-gray-50">
+                {/* Group selection radio button */}
                 <td className="border border-gray-300 p-2">
                   <input
                     type="radio"
@@ -80,6 +85,7 @@ const AppGroups: React.FC = () => {
                     className="cursor-pointer"
                   />
                 </td>
+                {/* Group details */}
                 <td className="border border-gray-300 p-2">{group.id}</td>
                 <td className="border border-gray-300 p-2">
                   <Link href={`/AppGroup?groupId=${group.id}`} className="text-blue-500 underline cursor-pointer hover:text-blue-700">
@@ -87,20 +93,21 @@ const AppGroups: React.FC = () => {
                   </Link>
                 </td>
                 <td className="border border-gray-300 p-2">{group.appDescription}</td>
+                {/* Group thumbnail */}
                 <td className="border border-gray-300 p-2">
                   {group.image ? (
-                      <Image 
-                          src={`data:image/png;base64,${group.image.blob}`}
-                          alt={`Thumbnail for ${group.groupName}`}
-                          width={50} 
-                          height={50} 
-                          className="cursor-pointer"
-                          onClick={() => openImageUploadModal(group.id)}
-                      />
+                    <Image 
+                      src={`data:image/png;base64,${group.image.blob}`}
+                      alt={`Thumbnail for ${group.groupName}`}
+                      width={50} 
+                      height={50} 
+                      className="cursor-pointer"
+                      onClick={() => openImageUploadModal(group.id)}
+                    />
                   ) : (
-                      <Button onClick={() => openImageUploadModal(group.id)} variant='upload'>
-                          Upload Thumbnail
-                      </Button>
+                    <Button onClick={() => openImageUploadModal(group.id)} variant='upload'>
+                      Upload Thumbnail
+                    </Button>
                   )}
                 </td>
               </tr>
@@ -108,6 +115,7 @@ const AppGroups: React.FC = () => {
           </tbody>
         </table>
 
+        {/* Modal for adding/updating app groups */}
         {isModalOpen && (
           <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div className="modal-content bg-white p-6 rounded-lg w-full max-w-md">
@@ -136,6 +144,8 @@ const AppGroups: React.FC = () => {
             </div>
           </div>
         )}
+        
+        {/* Image upload modal */}
         <ImageUploadModal
           isOpen={isImageModalOpen}
           onClose={() => setIsImageModalOpen(false)}
