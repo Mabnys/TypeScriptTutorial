@@ -84,8 +84,8 @@ export default function AppGroupPage() {
                     </thead>
                     <tbody>
                         {apps.map(app => (
-                            <tr key={app.id}>
-                                <td>
+                            <tr key={app.id} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 p-2">
                                     <input
                                         type="radio"
                                         name="appSelect"
@@ -94,14 +94,15 @@ export default function AppGroupPage() {
                                         checked={selectedAppId === app.id}
                                     />
                                 </td>
-                                <td>{app.id}</td>
-                                <td>{app.appName}</td>
-                                <td>{app.bundleId}</td>
-                                <td>{app.minimumTargetVersion}</td>
-                                <td>{app.recommendedTargetVersion}</td>
-                                <td>{app.platformName}</td>
-                                <td>{new Date(app.lastUpdateDate).toLocaleDateString()}</td>
-                        <td>
+                                <td className="border border-gray-300 p-2">{app.id}</td>
+                                <td className="border border-gray-300 p-2">{app.appName}</td>
+                                <td className="border border-gray-300 p-2">{app.bundleId}</td>
+                                <td className="border border-gray-300 p-2">{app.minimumTargetVersion}</td>
+                                <td className="border border-gray-300 p-2">{app.recommendedTargetVersion}</td>
+                                <td className="border border-gray-300 p-2">{app.platformName}</td>
+                                <td className="border border-gray-300 p-2">{new Date(app.lastUpdateDate).toLocaleDateString()}</td>
+                      
+                        <td className="border border-gray-300 p-2">
                             {app.images ? (
                                 <Image 
                                     src={`data:image/png;base64,${app.images[0].blob}`}
@@ -121,6 +122,7 @@ export default function AppGroupPage() {
                         ))}
                     </tbody>
                 </table>
+
                 
                 {modalOpen && (
                     <div id="modalForm" className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -156,6 +158,7 @@ export default function AppGroupPage() {
                                 />
                                 {errors.minTargetVersion && <span className="text-red-500 text-sm">{errors.minTargetVersion.message}</span>}
 
+
                                 <input 
                                     {...register("recTargetVersion", { required: "Recommended Target Version is required" })} 
                                     placeholder="Recommended Target Version" 
@@ -183,6 +186,7 @@ export default function AppGroupPage() {
                         </div>
                     </div>
                 )}
+
 
                 <ImageUploadModal
                     isOpen={isImageModalOpen}
