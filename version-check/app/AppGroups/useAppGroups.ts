@@ -1,113 +1,88 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useForm, SubmitHandler } from 'react-hook-form';
-// import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { AppGroup } from '../Types/AppGroup';
 import { useRefreshToken } from '../Components/useRefreshToken';
-
-// Define the structure of an AppGroup
-export interface AppGroup {
-  id: string;
-  groupName: string;
-  appDescription: string;
-  image?: ImageBlob;
-}
-
-export interface ImageBlob {
-  blob: string
-}
-
-// Define the structure of form data for AppGroup
-export interface AppGroupFormData {
-  appName: string;
-  appDescription: string;
-}
+import { useRouter } from 'next/navigation';
 
 export const useGroupApps = () => {
   const [appGroups, setAppGroups] = useState<AppGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Add App Group');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<AppGroupFormData>();
-
-  // const router = useRouter();
   const { refreshAccessToken } = useRefreshToken();
+  const router = useRouter();
 
-  // Function to get the auth token from cookies
-  const getAuthToken = () => {
-    return document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
-  };
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<AppGroup>();
 
-  // Function to fetch all app groups
+  // Function to fetch app groups
   const fetchAppGroups = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      let authToken = getAuthToken();
-
-      if (!authToken) {
-        // Try to refresh the token if it's not available
-        authToken = await refreshAccessToken();
+      let accessToken = document.cookie.split('; ').find(row => row.startsWith('authToken='))?.split('=')[1];
+      if (!accessToken) {
+        accessToken = await refreshAccessToken();
       }
-
       const response = await fetch('http://localhost:8080/api/v1/get-all-appgroups', {
-        headers: { 'Authorization': `Bearer ${authToken}` },
+        headers: { 'Authorization': `Bearer ${accessToken}` },
       });
-
       if (response.status === 401) {
-        // If unauthorized, try refreshing the token
-        authToken = await refreshAccessToken();
-        // Retry the request with the new token
+        accessToken = await refreshAccessToken();
         const retryResponse = await fetch('http://localhost:8080/api/v1/get-all-appgroups', {
-          headers: { 'Authorization': `Bearer ${authToken}` },
+          headers: { 'Authorization': `Bearer ${accessToken}` },
         });
-        if (!retryResponse.ok) throw new Error('Network response was not ok after token refresh');
-        return retryResponse.json();
+        if (!retryResponse.ok) throw new Error('Failed to fetch app groups after token refresh');
+        const data = await retryResponse.json();
+        setAppGroups(data);
+      } else if (!response.ok) {
+        throw new Error('Failed to fetch app groups');
+      } else {
+        const data = await response.json();
+        setAppGroups(data);
       }
-
-      if (!response.ok) throw new Error('Network response was not ok');
-      const data = await response.json();
-      
-      // Process the fetched data
-      const processedData = data.map((group: AppGroup) => ({
-        ...group,
-        thumbnail: group.image && group.image.blob
-          ? `data:image/png;base64,${group.image.blob}`
-          : null
-      }));
-      setAppGroups(processedData);
-      return processedData;
-    } catch (error) {
-      console.error('Error fetching app groups:', error);
-      throw error;
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
+      if (err instanceof Error && err.message.includes('authentication')) {
+        router.push('/login');
+      }
+    } finally {
+      setLoading(false);
     }
-  }, [refreshAccessToken]);
+  }, [refreshAccessToken, router]);
 
-  // Fetch app groups when the component mounts
   useEffect(() => {
-    fetchAppGroups().catch(error => console.error('Error in useEffect:', error));
+    fetchAppGroups();
   }, [fetchAppGroups]);
+
+  // Handler for refreshing the app groups list
+  const handleRefresh = () => fetchAppGroups();
 
   // Handler for selecting a group
   const handleSelectGroup = (id: string) => setSelectedGroupId(id);
 
-  // Handler for refreshing the app group list
-  const handleRefresh = () => fetchAppGroups();
-
-  // Handler for opening the add modal
+  // Handler for adding a new app group
   const handleAdd = () => {
     setModalTitle('Add App Group');
-    reset({ appName: '', appDescription: '' });
+    reset({ groupName: '', appDescription: '' });
     setSelectedGroupId(null);
     setIsModalOpen(true);
   };
 
-  // Handler for opening the update modal
+  // Handler for updating an app group
   const handleUpdate = () => {
     if (!selectedGroupId) return alert('No group selected.');
-
     const selectedGroup = appGroups.find(group => group.id === selectedGroupId);
     if (selectedGroup) {
       setModalTitle('Update App Group');
       reset({
-        appName: selectedGroup.groupName,
+        groupName: selectedGroup.groupName,
         appDescription: selectedGroup.appDescription,
       });
       setIsModalOpen(true);
@@ -117,81 +92,18 @@ export const useGroupApps = () => {
   // Handler for deleting an app group
   const handleDelete = () => {
     if (!selectedGroupId) return alert('No group selected.');
-
-    if (confirm('Are you sure you want to delete this app group?')) {
-      const authToken = getAuthToken();
-      if (!authToken) return alert('Authentication required.');
-
-      fetch(`http://localhost:8080/api/v1/delete-appgroup?APPID=${selectedGroupId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${authToken}` },
-      })
-        .then(response => {
-          if (response.ok) fetchAppGroups();
-          else throw new Error('Failed to delete app group');
-        })
-        .catch(error => console.error('Error deleting app group:', error));
-    }
+    console.log('Delete group:', selectedGroupId);
   };
 
   // Handler for form submission
-  const onSubmit: SubmitHandler<AppGroupFormData> = (data) => {
-    const authToken = getAuthToken();
-    if (!authToken) return alert('Authentication required.');
-
-    const method = selectedGroupId ? 'PUT' : 'POST';
-    const url = selectedGroupId
-      ? `http://localhost:8080/api/v1/update-appgroup?APPID=${selectedGroupId}`
-      : 'http://localhost:8080/api/v1/create-appgroup';
-
-    fetch(url, {
-      method,
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        groupName: data.appName,
-        appDescription: data.appDescription,
-      }),
-    })
-      .then(response => {
-        if (response.ok) {
-          alert(`${selectedGroupId ? 'Updated' : 'Created'} App Group successfully!`);
-          setIsModalOpen(false);
-          fetchAppGroups();
-        } else {
-          throw new Error('Form submission failed');
-        }
-      })
-      .catch(error => console.error('Error submitting form:', error));
+  const onSubmit = (data: AppGroup) => {
+    console.log('Form submitted:', data);
+    setIsModalOpen(false);
   };
 
   // Handler for uploading an image
-  const handleUploadImage = async (groupId: string, file: File) => {
-    const authToken = getAuthToken();
-    if (!authToken) return alert('Authentication required.');
-
-    const formData = new FormData();
-    formData.append('vcImage', file);
-
-    try {
-      const response = await fetch(`http://localhost:8080/api/v1/app-group/${groupId}/upload-image`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${authToken}` },
-        body: formData,
-      });
-
-      if (response.ok) {
-        alert(`${groupId ? 'Uploaded' : 'Updated'} image successfully!`);
-        fetchAppGroups();
-      } else {
-        throw new Error('Failed to upload image.');
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('An error occurred while uploading the image.');
-    }
+  const handleUploadImage = (groupId: string, file: File) => {
+    console.log('Upload image for group:', groupId, file);
   };
 
   return {
@@ -210,5 +122,7 @@ export const useGroupApps = () => {
     onSubmit,
     setIsModalOpen,
     handleUploadImage,
+    loading,
+    error
   };
 };
